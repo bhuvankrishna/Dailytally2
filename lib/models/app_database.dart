@@ -4,10 +4,10 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+part 'app_database.g.dart';
+
 enum CategoryType { Income, Expense }
 enum BudgetPeriod { Monthly, Weekly, Yearly }
-
-part 'app_database.g.dart';
 
 class Categories extends Table {
   IntColumn get id => integer().autoIncrement()();
