@@ -20,7 +20,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.category?.name);
-    _type = widget.category?.type ?? 'Expense';
+    _type = widget.category?.type as String? ?? 'Expense';
   }
 
   @override

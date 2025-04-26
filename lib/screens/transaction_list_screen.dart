@@ -34,7 +34,7 @@ class TransactionListScreen extends StatelessWidget {
               final tx = txs[index];
               final dateStr = DateFormat.yMMMd().format(tx.date);
               final amountStr = NumberFormat.currency(symbol: '\$', decimalDigits: 2).format(tx.amount);
-              final isIncome = tx.type == CategoryType.Income.name;
+              final isIncome = tx.type == 'Income';
               return ListTile(
                 leading: Icon(
                   isIncome ? Icons.arrow_downward : Icons.arrow_upward,

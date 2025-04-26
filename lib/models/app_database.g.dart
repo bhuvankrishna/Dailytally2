@@ -35,15 +35,19 @@ class $CategoriesTable extends Categories
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
   @override
-  late final GeneratedColumnWithTypeConverter<CategoryType, String> type =
-      GeneratedColumn<String>(
-        'type',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      ).withConverter<CategoryType>($CategoriesTable.$convertertype);
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 10,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   @override
   List<GeneratedColumn> get $columns => [id, name, type];
   @override
@@ -69,6 +73,14 @@ class $CategoriesTable extends Categories
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
     return context;
   }
 
@@ -88,12 +100,11 @@ class $CategoriesTable extends Categories
             DriftSqlType.string,
             data['${effectivePrefix}name'],
           )!,
-      type: $CategoriesTable.$convertertype.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}type'],
-        )!,
-      ),
+      type:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}type'],
+          )!,
     );
   }
 
@@ -101,26 +112,19 @@ class $CategoriesTable extends Categories
   $CategoriesTable createAlias(String alias) {
     return $CategoriesTable(attachedDatabase, alias);
   }
-
-  static JsonTypeConverter2<CategoryType, String, String> $convertertype =
-      const EnumNameConverter<CategoryType>(CategoryType.values);
 }
 
 class Category extends DataClass implements Insertable<Category> {
   final int id;
   final String name;
-  final CategoryType type;
+  final String type;
   const Category({required this.id, required this.name, required this.type});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
-    {
-      map['type'] = Variable<String>(
-        $CategoriesTable.$convertertype.toSql(type),
-      );
-    }
+    map['type'] = Variable<String>(type);
     return map;
   }
 
@@ -140,9 +144,7 @@ class Category extends DataClass implements Insertable<Category> {
     return Category(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
-      type: $CategoriesTable.$convertertype.fromJson(
-        serializer.fromJson<String>(json['type']),
-      ),
+      type: serializer.fromJson<String>(json['type']),
     );
   }
   @override
@@ -151,13 +153,11 @@ class Category extends DataClass implements Insertable<Category> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
-      'type': serializer.toJson<String>(
-        $CategoriesTable.$convertertype.toJson(type),
-      ),
+      'type': serializer.toJson<String>(type),
     };
   }
 
-  Category copyWith({int? id, String? name, CategoryType? type}) => Category(
+  Category copyWith({int? id, String? name, String? type}) => Category(
     id: id ?? this.id,
     name: name ?? this.name,
     type: type ?? this.type,
@@ -194,7 +194,7 @@ class Category extends DataClass implements Insertable<Category> {
 class CategoriesCompanion extends UpdateCompanion<Category> {
   final Value<int> id;
   final Value<String> name;
-  final Value<CategoryType> type;
+  final Value<String> type;
   const CategoriesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -203,7 +203,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   CategoriesCompanion.insert({
     this.id = const Value.absent(),
     required String name,
-    required CategoryType type,
+    required String type,
   }) : name = Value(name),
        type = Value(type);
   static Insertable<Category> custom({
@@ -221,7 +221,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   CategoriesCompanion copyWith({
     Value<int>? id,
     Value<String>? name,
-    Value<CategoryType>? type,
+    Value<String>? type,
   }) {
     return CategoriesCompanion(
       id: id ?? this.id,
@@ -240,9 +240,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
       map['name'] = Variable<String>(name.value);
     }
     if (type.present) {
-      map['type'] = Variable<String>(
-        $CategoriesTable.$convertertype.toSql(type.value),
-      );
+      map['type'] = Variable<String>(type.value);
     }
     return map;
   }
@@ -1410,13 +1408,13 @@ typedef $$CategoriesTableCreateCompanionBuilder =
     CategoriesCompanion Function({
       Value<int> id,
       required String name,
-      required CategoryType type,
+      required String type,
     });
 typedef $$CategoriesTableUpdateCompanionBuilder =
     CategoriesCompanion Function({
       Value<int> id,
       Value<String> name,
-      Value<CategoryType> type,
+      Value<String> type,
     });
 
 final class $$CategoriesTableReferences
@@ -1509,11 +1507,10 @@ class $$CategoriesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnWithTypeConverterFilters<CategoryType, CategoryType, String> get type =>
-      $composableBuilder(
-        column: $table.type,
-        builder: (column) => ColumnWithTypeConverterFilters(column),
-      );
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
 
   Expression<bool> transactionsRefs(
     Expression<bool> Function($$TransactionsTableFilterComposer f) f,
@@ -1631,7 +1628,7 @@ class $$CategoriesTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumnWithTypeConverter<CategoryType, String> get type =>
+  GeneratedColumn<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
 
   Expression<T> transactionsRefs<T extends Object>(
@@ -1745,13 +1742,13 @@ class $$CategoriesTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
-                Value<CategoryType> type = const Value.absent(),
+                Value<String> type = const Value.absent(),
               }) => CategoriesCompanion(id: id, name: name, type: type),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
-                required CategoryType type,
+                required String type,
               }) => CategoriesCompanion.insert(id: id, name: name, type: type),
           withReferenceMapper:
               (p0) =>

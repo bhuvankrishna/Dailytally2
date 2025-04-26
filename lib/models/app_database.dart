@@ -12,11 +12,11 @@ enum BudgetPeriod { Monthly, Weekly, Yearly }
 class Categories extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 1, max: 50)();
-  TextColumn get type => text().map(const EnumNameConverter<CategoryType>(CategoryType.values))();
+  TextColumn get type => text().withLength(min: 1, max: 10)();
 }
 
 class Transactions extends Table {
-  @Index(['categoryId'])
+
   IntColumn get id => integer().autoIncrement()();
   IntColumn get categoryId => integer().nullable().references(Categories, #id, onDelete: KeyAction.setNull)();
   TextColumn get type => text().withLength(min: 1, max: 10)();
@@ -26,7 +26,7 @@ class Transactions extends Table {
 }
 
 class BudgetLimits extends Table {
-  @Index(['categoryId'])
+
   IntColumn get id => integer().autoIncrement()();
   IntColumn get categoryId => integer().nullable().references(Categories, #id, onDelete: KeyAction.setNull)();
   RealColumn get limitAmount => real()();
@@ -34,7 +34,7 @@ class BudgetLimits extends Table {
 }
 
 class RecurringExpenses extends Table {
-  @Index(['categoryId'])
+
   IntColumn get id => integer().autoIncrement()();
   IntColumn get categoryId => integer().nullable().references(Categories, #id, onDelete: KeyAction.setNull)();
   RealColumn get amount => real()();
