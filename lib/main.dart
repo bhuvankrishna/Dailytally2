@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
+import 'models/app_database.dart';
+import 'screens/category_list_screen.dart';
+import 'screens/add_category_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  final db = AppDatabase();
+  runApp(MyApp(db: db));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final AppDatabase db;
+  const MyApp({Key? key, required this.db}) : super(key: key);
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Daily Tally',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -30,7 +36,14 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      initialRoute: '/categories',
+      routes: {
+        '/categories': (ctx) => CategoryListScreen(db: db),
+        '/add_category': (ctx) {
+          final cat = ModalRoute.of(ctx)!.settings.arguments as Category?;
+          return AddCategoryScreen(db: db, category: cat);
+        },
+      },
     );
   }
 }
