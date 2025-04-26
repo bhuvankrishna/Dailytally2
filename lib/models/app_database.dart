@@ -1,5 +1,8 @@
 import 'package:drift/drift.dart';
-import 'package:drift_flutter/drift_flutter.dart';
+import 'package:drift/native.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 part 'app_database.g.dart';
 
@@ -33,15 +36,18 @@ class RecurringExpenses extends Table {
   DateTimeColumn get nextDueDate => dateTime().named('next_due_date')();
 }
 
+// Opens the database in the device's file system asynchronously.
+LazyDatabase _openConnection() {
+  return LazyDatabase(() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dir.path, 'dailytally.sqlite'));
+    return NativeDatabase(file, logStatements: true);
+  });
+}
+
 @DriftDatabase(tables: [Categories, Transactions, BudgetLimits, RecurringExpenses])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase()
-      : super(
-          FlutterQueryExecutor.inDatabaseFolder(
-            path: 'dailytally.sqlite',
-            logStatements: true,
-          ),
-        );
+  AppDatabase() : super(_openConnection());
 
   @override
   int get schemaVersion => 1;
