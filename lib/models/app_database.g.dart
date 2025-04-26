@@ -35,19 +35,15 @@ class $CategoriesTable extends Categories
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _typeMeta = const VerificationMeta('type');
   @override
-  late final GeneratedColumn<String> type = GeneratedColumn<String>(
-    'type',
-    aliasedName,
-    false,
-    additionalChecks: GeneratedColumn.checkTextLength(
-      minTextLength: 1,
-      maxTextLength: 10,
-    ),
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
+  late final GeneratedColumnWithTypeConverter<CategoryType, String> type =
+      GeneratedColumn<String>(
+        'type',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<CategoryType>($CategoriesTable.$convertertype);
   @override
   List<GeneratedColumn> get $columns => [id, name, type];
   @override
@@ -73,14 +69,6 @@ class $CategoriesTable extends Categories
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
-    if (data.containsKey('type')) {
-      context.handle(
-        _typeMeta,
-        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_typeMeta);
-    }
     return context;
   }
 
@@ -100,11 +88,12 @@ class $CategoriesTable extends Categories
             DriftSqlType.string,
             data['${effectivePrefix}name'],
           )!,
-      type:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}type'],
-          )!,
+      type: $CategoriesTable.$convertertype.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}type'],
+        )!,
+      ),
     );
   }
 
@@ -112,19 +101,26 @@ class $CategoriesTable extends Categories
   $CategoriesTable createAlias(String alias) {
     return $CategoriesTable(attachedDatabase, alias);
   }
+
+  static JsonTypeConverter2<CategoryType, String, String> $convertertype =
+      const EnumNameConverter<CategoryType>(CategoryType.values);
 }
 
 class Category extends DataClass implements Insertable<Category> {
   final int id;
   final String name;
-  final String type;
+  final CategoryType type;
   const Category({required this.id, required this.name, required this.type});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
-    map['type'] = Variable<String>(type);
+    {
+      map['type'] = Variable<String>(
+        $CategoriesTable.$convertertype.toSql(type),
+      );
+    }
     return map;
   }
 
@@ -144,7 +140,9 @@ class Category extends DataClass implements Insertable<Category> {
     return Category(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
-      type: serializer.fromJson<String>(json['type']),
+      type: $CategoriesTable.$convertertype.fromJson(
+        serializer.fromJson<String>(json['type']),
+      ),
     );
   }
   @override
@@ -153,11 +151,13 @@ class Category extends DataClass implements Insertable<Category> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
-      'type': serializer.toJson<String>(type),
+      'type': serializer.toJson<String>(
+        $CategoriesTable.$convertertype.toJson(type),
+      ),
     };
   }
 
-  Category copyWith({int? id, String? name, String? type}) => Category(
+  Category copyWith({int? id, String? name, CategoryType? type}) => Category(
     id: id ?? this.id,
     name: name ?? this.name,
     type: type ?? this.type,
@@ -194,7 +194,7 @@ class Category extends DataClass implements Insertable<Category> {
 class CategoriesCompanion extends UpdateCompanion<Category> {
   final Value<int> id;
   final Value<String> name;
-  final Value<String> type;
+  final Value<CategoryType> type;
   const CategoriesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -203,7 +203,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   CategoriesCompanion.insert({
     this.id = const Value.absent(),
     required String name,
-    required String type,
+    required CategoryType type,
   }) : name = Value(name),
        type = Value(type);
   static Insertable<Category> custom({
@@ -221,7 +221,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   CategoriesCompanion copyWith({
     Value<int>? id,
     Value<String>? name,
-    Value<String>? type,
+    Value<CategoryType>? type,
   }) {
     return CategoriesCompanion(
       id: id ?? this.id,
@@ -240,7 +240,9 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
       map['name'] = Variable<String>(name.value);
     }
     if (type.present) {
-      map['type'] = Variable<String>(type.value);
+      map['type'] = Variable<String>(
+        $CategoriesTable.$convertertype.toSql(type.value),
+      );
     }
     return map;
   }
@@ -282,11 +284,11 @@ class $TransactionsTable extends Transactions
   late final GeneratedColumn<int> categoryId = GeneratedColumn<int>(
     'category_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.int,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES categories (id)',
+      'REFERENCES categories (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _typeMeta = const VerificationMeta('type');
@@ -364,8 +366,6 @@ class $TransactionsTable extends Transactions
         _categoryIdMeta,
         categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
       );
-    } else if (isInserting) {
-      context.missing(_categoryIdMeta);
     }
     if (data.containsKey('type')) {
       context.handle(
@@ -416,11 +416,10 @@ class $TransactionsTable extends Transactions
             DriftSqlType.int,
             data['${effectivePrefix}id'],
           )!,
-      categoryId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}category_id'],
-          )!,
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}category_id'],
+      ),
       type:
           attachedDatabase.typeMapping.read(
             DriftSqlType.string,
@@ -452,14 +451,14 @@ class $TransactionsTable extends Transactions
 
 class Transaction extends DataClass implements Insertable<Transaction> {
   final int id;
-  final int categoryId;
+  final int? categoryId;
   final String type;
   final DateTime date;
   final String description;
   final double amount;
   const Transaction({
     required this.id,
-    required this.categoryId,
+    this.categoryId,
     required this.type,
     required this.date,
     required this.description,
@@ -469,7 +468,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['category_id'] = Variable<int>(categoryId);
+    if (!nullToAbsent || categoryId != null) {
+      map['category_id'] = Variable<int>(categoryId);
+    }
     map['type'] = Variable<String>(type);
     map['date'] = Variable<DateTime>(date);
     map['description'] = Variable<String>(description);
@@ -480,7 +481,10 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   TransactionsCompanion toCompanion(bool nullToAbsent) {
     return TransactionsCompanion(
       id: Value(id),
-      categoryId: Value(categoryId),
+      categoryId:
+          categoryId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(categoryId),
       type: Value(type),
       date: Value(date),
       description: Value(description),
@@ -495,7 +499,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Transaction(
       id: serializer.fromJson<int>(json['id']),
-      categoryId: serializer.fromJson<int>(json['categoryId']),
+      categoryId: serializer.fromJson<int?>(json['categoryId']),
       type: serializer.fromJson<String>(json['type']),
       date: serializer.fromJson<DateTime>(json['date']),
       description: serializer.fromJson<String>(json['description']),
@@ -507,7 +511,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'categoryId': serializer.toJson<int>(categoryId),
+      'categoryId': serializer.toJson<int?>(categoryId),
       'type': serializer.toJson<String>(type),
       'date': serializer.toJson<DateTime>(date),
       'description': serializer.toJson<String>(description),
@@ -517,14 +521,14 @@ class Transaction extends DataClass implements Insertable<Transaction> {
 
   Transaction copyWith({
     int? id,
-    int? categoryId,
+    Value<int?> categoryId = const Value.absent(),
     String? type,
     DateTime? date,
     String? description,
     double? amount,
   }) => Transaction(
     id: id ?? this.id,
-    categoryId: categoryId ?? this.categoryId,
+    categoryId: categoryId.present ? categoryId.value : this.categoryId,
     type: type ?? this.type,
     date: date ?? this.date,
     description: description ?? this.description,
@@ -573,7 +577,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
 
 class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<int> id;
-  final Value<int> categoryId;
+  final Value<int?> categoryId;
   final Value<String> type;
   final Value<DateTime> date;
   final Value<String> description;
@@ -588,13 +592,12 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   });
   TransactionsCompanion.insert({
     this.id = const Value.absent(),
-    required int categoryId,
+    this.categoryId = const Value.absent(),
     required String type,
     required DateTime date,
     required String description,
     required double amount,
-  }) : categoryId = Value(categoryId),
-       type = Value(type),
+  }) : type = Value(type),
        date = Value(date),
        description = Value(description),
        amount = Value(amount);
@@ -618,7 +621,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
 
   TransactionsCompanion copyWith({
     Value<int>? id,
-    Value<int>? categoryId,
+    Value<int?>? categoryId,
     Value<String>? type,
     Value<DateTime>? date,
     Value<String>? description,
@@ -698,11 +701,11 @@ class $BudgetLimitsTable extends BudgetLimits
   late final GeneratedColumn<int> categoryId = GeneratedColumn<int>(
     'category_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.int,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES categories (id)',
+      'REFERENCES categories (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _limitAmountMeta = const VerificationMeta(
@@ -716,19 +719,15 @@ class $BudgetLimitsTable extends BudgetLimits
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _periodMeta = const VerificationMeta('period');
   @override
-  late final GeneratedColumn<String> period = GeneratedColumn<String>(
-    'period',
-    aliasedName,
-    false,
-    additionalChecks: GeneratedColumn.checkTextLength(
-      minTextLength: 1,
-      maxTextLength: 20,
-    ),
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
+  late final GeneratedColumnWithTypeConverter<BudgetPeriod, String> period =
+      GeneratedColumn<String>(
+        'period',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<BudgetPeriod>($BudgetLimitsTable.$converterperiod);
   @override
   List<GeneratedColumn> get $columns => [id, categoryId, limitAmount, period];
   @override
@@ -751,8 +750,6 @@ class $BudgetLimitsTable extends BudgetLimits
         _categoryIdMeta,
         categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
       );
-    } else if (isInserting) {
-      context.missing(_categoryIdMeta);
     }
     if (data.containsKey('limit_amount')) {
       context.handle(
@@ -764,14 +761,6 @@ class $BudgetLimitsTable extends BudgetLimits
       );
     } else if (isInserting) {
       context.missing(_limitAmountMeta);
-    }
-    if (data.containsKey('period')) {
-      context.handle(
-        _periodMeta,
-        period.isAcceptableOrUnknown(data['period']!, _periodMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_periodMeta);
     }
     return context;
   }
@@ -787,21 +776,21 @@ class $BudgetLimitsTable extends BudgetLimits
             DriftSqlType.int,
             data['${effectivePrefix}id'],
           )!,
-      categoryId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}category_id'],
-          )!,
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}category_id'],
+      ),
       limitAmount:
           attachedDatabase.typeMapping.read(
             DriftSqlType.double,
             data['${effectivePrefix}limit_amount'],
           )!,
-      period:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}period'],
-          )!,
+      period: $BudgetLimitsTable.$converterperiod.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}period'],
+        )!,
+      ),
     );
   }
 
@@ -809,16 +798,19 @@ class $BudgetLimitsTable extends BudgetLimits
   $BudgetLimitsTable createAlias(String alias) {
     return $BudgetLimitsTable(attachedDatabase, alias);
   }
+
+  static JsonTypeConverter2<BudgetPeriod, String, String> $converterperiod =
+      const EnumNameConverter<BudgetPeriod>(BudgetPeriod.values);
 }
 
 class BudgetLimit extends DataClass implements Insertable<BudgetLimit> {
   final int id;
-  final int categoryId;
+  final int? categoryId;
   final double limitAmount;
-  final String period;
+  final BudgetPeriod period;
   const BudgetLimit({
     required this.id,
-    required this.categoryId,
+    this.categoryId,
     required this.limitAmount,
     required this.period,
   });
@@ -826,16 +818,25 @@ class BudgetLimit extends DataClass implements Insertable<BudgetLimit> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['category_id'] = Variable<int>(categoryId);
+    if (!nullToAbsent || categoryId != null) {
+      map['category_id'] = Variable<int>(categoryId);
+    }
     map['limit_amount'] = Variable<double>(limitAmount);
-    map['period'] = Variable<String>(period);
+    {
+      map['period'] = Variable<String>(
+        $BudgetLimitsTable.$converterperiod.toSql(period),
+      );
+    }
     return map;
   }
 
   BudgetLimitsCompanion toCompanion(bool nullToAbsent) {
     return BudgetLimitsCompanion(
       id: Value(id),
-      categoryId: Value(categoryId),
+      categoryId:
+          categoryId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(categoryId),
       limitAmount: Value(limitAmount),
       period: Value(period),
     );
@@ -848,9 +849,11 @@ class BudgetLimit extends DataClass implements Insertable<BudgetLimit> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return BudgetLimit(
       id: serializer.fromJson<int>(json['id']),
-      categoryId: serializer.fromJson<int>(json['categoryId']),
+      categoryId: serializer.fromJson<int?>(json['categoryId']),
       limitAmount: serializer.fromJson<double>(json['limitAmount']),
-      period: serializer.fromJson<String>(json['period']),
+      period: $BudgetLimitsTable.$converterperiod.fromJson(
+        serializer.fromJson<String>(json['period']),
+      ),
     );
   }
   @override
@@ -858,20 +861,22 @@ class BudgetLimit extends DataClass implements Insertable<BudgetLimit> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'categoryId': serializer.toJson<int>(categoryId),
+      'categoryId': serializer.toJson<int?>(categoryId),
       'limitAmount': serializer.toJson<double>(limitAmount),
-      'period': serializer.toJson<String>(period),
+      'period': serializer.toJson<String>(
+        $BudgetLimitsTable.$converterperiod.toJson(period),
+      ),
     };
   }
 
   BudgetLimit copyWith({
     int? id,
-    int? categoryId,
+    Value<int?> categoryId = const Value.absent(),
     double? limitAmount,
-    String? period,
+    BudgetPeriod? period,
   }) => BudgetLimit(
     id: id ?? this.id,
-    categoryId: categoryId ?? this.categoryId,
+    categoryId: categoryId.present ? categoryId.value : this.categoryId,
     limitAmount: limitAmount ?? this.limitAmount,
     period: period ?? this.period,
   );
@@ -911,9 +916,9 @@ class BudgetLimit extends DataClass implements Insertable<BudgetLimit> {
 
 class BudgetLimitsCompanion extends UpdateCompanion<BudgetLimit> {
   final Value<int> id;
-  final Value<int> categoryId;
+  final Value<int?> categoryId;
   final Value<double> limitAmount;
-  final Value<String> period;
+  final Value<BudgetPeriod> period;
   const BudgetLimitsCompanion({
     this.id = const Value.absent(),
     this.categoryId = const Value.absent(),
@@ -922,11 +927,10 @@ class BudgetLimitsCompanion extends UpdateCompanion<BudgetLimit> {
   });
   BudgetLimitsCompanion.insert({
     this.id = const Value.absent(),
-    required int categoryId,
+    this.categoryId = const Value.absent(),
     required double limitAmount,
-    required String period,
-  }) : categoryId = Value(categoryId),
-       limitAmount = Value(limitAmount),
+    required BudgetPeriod period,
+  }) : limitAmount = Value(limitAmount),
        period = Value(period);
   static Insertable<BudgetLimit> custom({
     Expression<int>? id,
@@ -944,9 +948,9 @@ class BudgetLimitsCompanion extends UpdateCompanion<BudgetLimit> {
 
   BudgetLimitsCompanion copyWith({
     Value<int>? id,
-    Value<int>? categoryId,
+    Value<int?>? categoryId,
     Value<double>? limitAmount,
-    Value<String>? period,
+    Value<BudgetPeriod>? period,
   }) {
     return BudgetLimitsCompanion(
       id: id ?? this.id,
@@ -969,7 +973,9 @@ class BudgetLimitsCompanion extends UpdateCompanion<BudgetLimit> {
       map['limit_amount'] = Variable<double>(limitAmount.value);
     }
     if (period.present) {
-      map['period'] = Variable<String>(period.value);
+      map['period'] = Variable<String>(
+        $BudgetLimitsTable.$converterperiod.toSql(period.value),
+      );
     }
     return map;
   }
@@ -1012,11 +1018,11 @@ class $RecurringExpensesTable extends RecurringExpenses
   late final GeneratedColumn<int> categoryId = GeneratedColumn<int>(
     'category_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.int,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES categories (id)',
+      'REFERENCES categories (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _amountMeta = const VerificationMeta('amount');
@@ -1082,8 +1088,6 @@ class $RecurringExpensesTable extends RecurringExpenses
         _categoryIdMeta,
         categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
       );
-    } else if (isInserting) {
-      context.missing(_categoryIdMeta);
     }
     if (data.containsKey('amount')) {
       context.handle(
@@ -1126,11 +1130,10 @@ class $RecurringExpensesTable extends RecurringExpenses
             DriftSqlType.int,
             data['${effectivePrefix}id'],
           )!,
-      categoryId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}category_id'],
-          )!,
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}category_id'],
+      ),
       amount:
           attachedDatabase.typeMapping.read(
             DriftSqlType.double,
@@ -1158,13 +1161,13 @@ class $RecurringExpensesTable extends RecurringExpenses
 class RecurringExpense extends DataClass
     implements Insertable<RecurringExpense> {
   final int id;
-  final int categoryId;
+  final int? categoryId;
   final double amount;
   final String frequency;
   final DateTime nextDueDate;
   const RecurringExpense({
     required this.id,
-    required this.categoryId,
+    this.categoryId,
     required this.amount,
     required this.frequency,
     required this.nextDueDate,
@@ -1173,7 +1176,9 @@ class RecurringExpense extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['category_id'] = Variable<int>(categoryId);
+    if (!nullToAbsent || categoryId != null) {
+      map['category_id'] = Variable<int>(categoryId);
+    }
     map['amount'] = Variable<double>(amount);
     map['frequency'] = Variable<String>(frequency);
     map['next_due_date'] = Variable<DateTime>(nextDueDate);
@@ -1183,7 +1188,10 @@ class RecurringExpense extends DataClass
   RecurringExpensesCompanion toCompanion(bool nullToAbsent) {
     return RecurringExpensesCompanion(
       id: Value(id),
-      categoryId: Value(categoryId),
+      categoryId:
+          categoryId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(categoryId),
       amount: Value(amount),
       frequency: Value(frequency),
       nextDueDate: Value(nextDueDate),
@@ -1197,7 +1205,7 @@ class RecurringExpense extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return RecurringExpense(
       id: serializer.fromJson<int>(json['id']),
-      categoryId: serializer.fromJson<int>(json['categoryId']),
+      categoryId: serializer.fromJson<int?>(json['categoryId']),
       amount: serializer.fromJson<double>(json['amount']),
       frequency: serializer.fromJson<String>(json['frequency']),
       nextDueDate: serializer.fromJson<DateTime>(json['nextDueDate']),
@@ -1208,7 +1216,7 @@ class RecurringExpense extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'categoryId': serializer.toJson<int>(categoryId),
+      'categoryId': serializer.toJson<int?>(categoryId),
       'amount': serializer.toJson<double>(amount),
       'frequency': serializer.toJson<String>(frequency),
       'nextDueDate': serializer.toJson<DateTime>(nextDueDate),
@@ -1217,13 +1225,13 @@ class RecurringExpense extends DataClass
 
   RecurringExpense copyWith({
     int? id,
-    int? categoryId,
+    Value<int?> categoryId = const Value.absent(),
     double? amount,
     String? frequency,
     DateTime? nextDueDate,
   }) => RecurringExpense(
     id: id ?? this.id,
-    categoryId: categoryId ?? this.categoryId,
+    categoryId: categoryId.present ? categoryId.value : this.categoryId,
     amount: amount ?? this.amount,
     frequency: frequency ?? this.frequency,
     nextDueDate: nextDueDate ?? this.nextDueDate,
@@ -1268,7 +1276,7 @@ class RecurringExpense extends DataClass
 
 class RecurringExpensesCompanion extends UpdateCompanion<RecurringExpense> {
   final Value<int> id;
-  final Value<int> categoryId;
+  final Value<int?> categoryId;
   final Value<double> amount;
   final Value<String> frequency;
   final Value<DateTime> nextDueDate;
@@ -1281,12 +1289,11 @@ class RecurringExpensesCompanion extends UpdateCompanion<RecurringExpense> {
   });
   RecurringExpensesCompanion.insert({
     this.id = const Value.absent(),
-    required int categoryId,
+    this.categoryId = const Value.absent(),
     required double amount,
     required String frequency,
     required DateTime nextDueDate,
-  }) : categoryId = Value(categoryId),
-       amount = Value(amount),
+  }) : amount = Value(amount),
        frequency = Value(frequency),
        nextDueDate = Value(nextDueDate);
   static Insertable<RecurringExpense> custom({
@@ -1307,7 +1314,7 @@ class RecurringExpensesCompanion extends UpdateCompanion<RecurringExpense> {
 
   RecurringExpensesCompanion copyWith({
     Value<int>? id,
-    Value<int>? categoryId,
+    Value<int?>? categoryId,
     Value<double>? amount,
     Value<String>? frequency,
     Value<DateTime>? nextDueDate,
@@ -1373,19 +1380,43 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     budgetLimits,
     recurringExpenses,
   ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('transactions', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('budget_limits', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('recurring_expenses', kind: UpdateKind.update)],
+    ),
+  ]);
 }
 
 typedef $$CategoriesTableCreateCompanionBuilder =
     CategoriesCompanion Function({
       Value<int> id,
       required String name,
-      required String type,
+      required CategoryType type,
     });
 typedef $$CategoriesTableUpdateCompanionBuilder =
     CategoriesCompanion Function({
       Value<int> id,
       Value<String> name,
-      Value<String> type,
+      Value<CategoryType> type,
     });
 
 final class $$CategoriesTableReferences
@@ -1478,10 +1509,11 @@ class $$CategoriesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get type => $composableBuilder(
-    column: $table.type,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnWithTypeConverterFilters<CategoryType, CategoryType, String> get type =>
+      $composableBuilder(
+        column: $table.type,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
 
   Expression<bool> transactionsRefs(
     Expression<bool> Function($$TransactionsTableFilterComposer f) f,
@@ -1599,7 +1631,7 @@ class $$CategoriesTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get type =>
+  GeneratedColumnWithTypeConverter<CategoryType, String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
 
   Expression<T> transactionsRefs<T extends Object>(
@@ -1713,13 +1745,13 @@ class $$CategoriesTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
-                Value<String> type = const Value.absent(),
+                Value<CategoryType> type = const Value.absent(),
               }) => CategoriesCompanion(id: id, name: name, type: type),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
-                required String type,
+                required CategoryType type,
               }) => CategoriesCompanion.insert(id: id, name: name, type: type),
           withReferenceMapper:
               (p0) =>
@@ -1841,7 +1873,7 @@ typedef $$CategoriesTableProcessedTableManager =
 typedef $$TransactionsTableCreateCompanionBuilder =
     TransactionsCompanion Function({
       Value<int> id,
-      required int categoryId,
+      Value<int?> categoryId,
       required String type,
       required DateTime date,
       required String description,
@@ -1850,7 +1882,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
 typedef $$TransactionsTableUpdateCompanionBuilder =
     TransactionsCompanion Function({
       Value<int> id,
-      Value<int> categoryId,
+      Value<int?> categoryId,
       Value<String> type,
       Value<DateTime> date,
       Value<String> description,
@@ -1866,9 +1898,9 @@ final class $$TransactionsTableReferences
         $_aliasNameGenerator(db.transactions.categoryId, db.categories.id),
       );
 
-  $$CategoriesTableProcessedTableManager get categoryId {
-    final $_column = $_itemColumn<int>('category_id')!;
-
+  $$CategoriesTableProcessedTableManager? get categoryId {
+    final $_column = $_itemColumn<int>('category_id');
+    if ($_column == null) return null;
     final manager = $$CategoriesTableTableManager(
       $_db,
       $_db.categories,
@@ -2077,7 +2109,7 @@ class $$TransactionsTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                Value<int> categoryId = const Value.absent(),
+                Value<int?> categoryId = const Value.absent(),
                 Value<String> type = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<String> description = const Value.absent(),
@@ -2093,7 +2125,7 @@ class $$TransactionsTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                required int categoryId,
+                Value<int?> categoryId = const Value.absent(),
                 required String type,
                 required DateTime date,
                 required String description,
@@ -2178,16 +2210,16 @@ typedef $$TransactionsTableProcessedTableManager =
 typedef $$BudgetLimitsTableCreateCompanionBuilder =
     BudgetLimitsCompanion Function({
       Value<int> id,
-      required int categoryId,
+      Value<int?> categoryId,
       required double limitAmount,
-      required String period,
+      required BudgetPeriod period,
     });
 typedef $$BudgetLimitsTableUpdateCompanionBuilder =
     BudgetLimitsCompanion Function({
       Value<int> id,
-      Value<int> categoryId,
+      Value<int?> categoryId,
       Value<double> limitAmount,
-      Value<String> period,
+      Value<BudgetPeriod> period,
     });
 
 final class $$BudgetLimitsTableReferences
@@ -2199,9 +2231,9 @@ final class $$BudgetLimitsTableReferences
         $_aliasNameGenerator(db.budgetLimits.categoryId, db.categories.id),
       );
 
-  $$CategoriesTableProcessedTableManager get categoryId {
-    final $_column = $_itemColumn<int>('category_id')!;
-
+  $$CategoriesTableProcessedTableManager? get categoryId {
+    final $_column = $_itemColumn<int>('category_id');
+    if ($_column == null) return null;
     final manager = $$CategoriesTableTableManager(
       $_db,
       $_db.categories,
@@ -2233,9 +2265,10 @@ class $$BudgetLimitsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get period => $composableBuilder(
+  ColumnWithTypeConverterFilters<BudgetPeriod, BudgetPeriod, String>
+  get period => $composableBuilder(
     column: $table.period,
-    builder: (column) => ColumnFilters(column),
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   $$CategoriesTableFilterComposer get categoryId {
@@ -2327,7 +2360,7 @@ class $$BudgetLimitsTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get period =>
+  GeneratedColumnWithTypeConverter<BudgetPeriod, String> get period =>
       $composableBuilder(column: $table.period, builder: (column) => column);
 
   $$CategoriesTableAnnotationComposer get categoryId {
@@ -2384,9 +2417,9 @@ class $$BudgetLimitsTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                Value<int> categoryId = const Value.absent(),
+                Value<int?> categoryId = const Value.absent(),
                 Value<double> limitAmount = const Value.absent(),
-                Value<String> period = const Value.absent(),
+                Value<BudgetPeriod> period = const Value.absent(),
               }) => BudgetLimitsCompanion(
                 id: id,
                 categoryId: categoryId,
@@ -2396,9 +2429,9 @@ class $$BudgetLimitsTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                required int categoryId,
+                Value<int?> categoryId = const Value.absent(),
                 required double limitAmount,
-                required String period,
+                required BudgetPeriod period,
               }) => BudgetLimitsCompanion.insert(
                 id: id,
                 categoryId: categoryId,
@@ -2477,7 +2510,7 @@ typedef $$BudgetLimitsTableProcessedTableManager =
 typedef $$RecurringExpensesTableCreateCompanionBuilder =
     RecurringExpensesCompanion Function({
       Value<int> id,
-      required int categoryId,
+      Value<int?> categoryId,
       required double amount,
       required String frequency,
       required DateTime nextDueDate,
@@ -2485,7 +2518,7 @@ typedef $$RecurringExpensesTableCreateCompanionBuilder =
 typedef $$RecurringExpensesTableUpdateCompanionBuilder =
     RecurringExpensesCompanion Function({
       Value<int> id,
-      Value<int> categoryId,
+      Value<int?> categoryId,
       Value<double> amount,
       Value<String> frequency,
       Value<DateTime> nextDueDate,
@@ -2509,9 +2542,9 @@ final class $$RecurringExpensesTableReferences
         $_aliasNameGenerator(db.recurringExpenses.categoryId, db.categories.id),
       );
 
-  $$CategoriesTableProcessedTableManager get categoryId {
-    final $_column = $_itemColumn<int>('category_id')!;
-
+  $$CategoriesTableProcessedTableManager? get categoryId {
+    final $_column = $_itemColumn<int>('category_id');
+    if ($_column == null) return null;
     final manager = $$CategoriesTableTableManager(
       $_db,
       $_db.categories,
@@ -2717,7 +2750,7 @@ class $$RecurringExpensesTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                Value<int> categoryId = const Value.absent(),
+                Value<int?> categoryId = const Value.absent(),
                 Value<double> amount = const Value.absent(),
                 Value<String> frequency = const Value.absent(),
                 Value<DateTime> nextDueDate = const Value.absent(),
@@ -2731,7 +2764,7 @@ class $$RecurringExpensesTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                required int categoryId,
+                Value<int?> categoryId = const Value.absent(),
                 required double amount,
                 required String frequency,
                 required DateTime nextDueDate,

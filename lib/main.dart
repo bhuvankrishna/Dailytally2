@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'models/app_database.dart';
 import 'screens/category_list_screen.dart';
 import 'screens/add_category_screen.dart';
+import 'screens/transaction_list_screen.dart';
+import 'screens/add_transaction_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +45,11 @@ class MyApp extends StatelessWidget {
         '/add_category': (ctx) {
           final cat = ModalRoute.of(ctx)!.settings.arguments as Category?;
           return AddCategoryScreen(db: db, category: cat);
+        },
+        '/transactions': (ctx) => TransactionListScreen(db: db),
+        '/add_transaction': (ctx) {
+          final tx = ModalRoute.of(ctx)!.settings.arguments as Transaction?;
+          return AddTransactionScreen(db: db, transaction: tx);
         },
       },
     );
