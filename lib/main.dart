@@ -3,9 +3,10 @@ import 'models/app_database.dart';
 import 'screens/category_list_screen.dart';
 import 'screens/add_category_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final db = AppDatabase();
+  await db.seedDefaultCategories();
   runApp(MyApp(db: db));
 }
 

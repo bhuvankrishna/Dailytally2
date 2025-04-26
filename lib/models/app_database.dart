@@ -51,4 +51,38 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   int get schemaVersion => 1;
+
+  /// Seeds default categories if table is empty
+  Future<void> seedDefaultCategories() async {
+    final existing = await select(categories).get();
+    if (existing.isEmpty) {
+      await batch((b) {
+        b.insertAll(categories, [
+          CategoriesCompanion.insert(name: 'Salary', type: 'Income'),
+          CategoriesCompanion.insert(name: 'Freelance', type: 'Income'),
+          CategoriesCompanion.insert(name: 'Investments', type: 'Income'),
+          CategoriesCompanion.insert(name: 'Rent', type: 'Income'),
+          CategoriesCompanion.insert(name: 'Other Income', type: 'Income'),
+          CategoriesCompanion.insert(name: 'Wallet', type: 'Income'),
+
+          CategoriesCompanion.insert(name: 'Food', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Transport', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Utilities', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Entertainment', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Utilities', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Rent', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Shopping', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Healthcare', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Education', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Other expenses', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Fast Tag', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Fuel', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Groceries', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Home loan', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Electricity', type: 'Expense'),
+          CategoriesCompanion.insert(name: 'Water', type: 'Expense'),
+        ]);
+      });
+    }
+  }
 }
