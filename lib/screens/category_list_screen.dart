@@ -12,41 +12,113 @@ class CategoryListScreen extends StatefulWidget {
 class _CategoryListScreenState extends State<CategoryListScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Categories'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.pushNamed(context, '/add_category')
-                  .then((_) => setState(() {}));
-            },
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Categories'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Income'),
+              Tab(text: 'Expense'),
+            ],
           ),
-        ],
-      ),
-      body: StreamBuilder<List<Category>>(
-        stream: widget.db.select(widget.db.categories).watch(),
-        builder: (context, snapshot) {
-          final categories = snapshot.data ?? [];
-          return ListView.builder(
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              final cat = categories[index];
-              return ListTile(
-                title: Text(cat.name),
-                subtitle: Text(cat.type),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/add_category', arguments: cat)
-                        .then((_) => setState(() {}));
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () {
+                Navigator.pushNamed(context, '/add_category')
+                    .then((_) => setState(() {}));
+              },
+            ),
+          ],
+        ),
+        body: TabBarView(
+          children: [
+            // Income tab
+            StreamBuilder<List<Category>>(
+              stream: widget.db.select(widget.db.categories).watch(),
+              builder: (context, snapshot) {
+                final cats = (snapshot.data ?? [])
+                    .where((c) => c.type == 'Income')
+                    .toList();
+                return ListView.builder(
+                  itemCount: cats.length,
+                  itemBuilder: (context, index) {
+                    final cat = cats[index];
+                    return ListTile(
+                      title: Text(cat.name),
+                      subtitle: Text(cat.type),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/add_category',
+                                arguments: cat,
+                              ).then((_) => setState(() {}));
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () async {
+                              await widget.db.delete(widget.db.categories).delete(cat);
+                              setState(() {});
+                            },
+                          ),
+                        ],
+                      ),
+                    );
                   },
-                ),
-              );
-            },
-          );
-        },
+                );
+              },
+            ),
+            // Expense tab
+            StreamBuilder<List<Category>>(
+              stream: widget.db.select(widget.db.categories).watch(),
+              builder: (context, snapshot) {
+                final cats = (snapshot.data ?? [])
+                    .where((c) => c.type == 'Expense')
+                    .toList();
+                return ListView.builder(
+                  itemCount: cats.length,
+                  itemBuilder: (context, index) {
+                    final cat = cats[index];
+                    return ListTile(
+                      title: Text(cat.name),
+                      subtitle: Text(cat.type),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/add_category',
+                                arguments: cat,
+                              ).then((_) => setState(() {}));
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () async {
+                              await widget.db.delete(widget.db.categories).delete(cat);
+                              setState(() {});
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
