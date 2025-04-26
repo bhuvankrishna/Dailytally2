@@ -11,7 +11,7 @@ class Categories extends Table {
 
 class Transactions extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get categoryId => integer().customConstraint('REFERENCES categories(id)')();
+  IntColumn get categoryId => integer().references(Categories, #id)();
   TextColumn get type => text().withLength(min: 1, max: 10)();
   DateTimeColumn get date => dateTime()();
   TextColumn get description => text().withLength(min: 0, max: 200)();
@@ -20,14 +20,14 @@ class Transactions extends Table {
 
 class BudgetLimits extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get categoryId => integer().customConstraint('REFERENCES categories(id)')();
+  IntColumn get categoryId => integer().references(Categories, #id)();
   RealColumn get limitAmount => real()();
   TextColumn get period => text().withLength(min: 1, max: 20)();
 }
 
 class RecurringExpenses extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get categoryId => integer().customConstraint('REFERENCES categories(id)')();
+  IntColumn get categoryId => integer().references(Categories, #id)();
   RealColumn get amount => real()();
   TextColumn get frequency => text().withLength(min: 1, max: 20)();
   DateTimeColumn get nextDueDate => dateTime().named('next_due_date')();
