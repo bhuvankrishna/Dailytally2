@@ -1,10 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/app_database.dart';
+import 'settings_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final AppDatabase db;
   const HomeScreen({Key? key, required this.db}) : super(key: key);
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String _currencySymbol = '₹';
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrencySymbol();
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload currency when screen becomes visible again
+    _loadCurrencySymbol();
+  }
+  
+  Future<void> _loadCurrencySymbol() async {
+    final symbol = await CurrencyService.getCurrencySymbol();
+    setState(() {
+      _currencySymbol = symbol;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +51,7 @@ class HomeScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: StreamBuilder<List<Transaction>>(
-          stream: db.select(db.transactions).watch(),
+          stream: widget.db.select(widget.db.transactions).watch(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -40,7 +68,7 @@ class HomeScreen extends StatelessWidget {
             
             final balance = totalIncome - totalExpense;
             
-            final currencyFormat = NumberFormat.currency(symbol: '₹', decimalDigits: 2);
+            final currencyFormat = NumberFormat.currency(symbol: _currencySymbol, decimalDigits: 2);
             
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

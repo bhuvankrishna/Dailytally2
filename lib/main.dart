@@ -5,6 +5,8 @@ import 'screens/add_category_screen.dart';
 import 'screens/transaction_list_screen.dart';
 import 'screens/add_transaction_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/main_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,7 +44,7 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (ctx) => HomeScreen(db: db),
+        '/': (ctx) => MainScreen(db: db),
         '/categories': (ctx) => CategoryListScreen(db: db),
         '/add_category': (ctx) {
           final cat = ModalRoute.of(ctx)!.settings.arguments as Category?;
@@ -53,6 +55,7 @@ class MyApp extends StatelessWidget {
           final tx = ModalRoute.of(ctx)!.settings.arguments as Transaction?;
           return AddTransactionScreen(db: db, transaction: tx);
         },
+        '/settings': (ctx) => const SettingsScreen(),
       },
     );
   }

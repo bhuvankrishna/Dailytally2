@@ -1,10 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/app_database.dart';
+import 'settings_screen.dart';
 
-class TransactionListScreen extends StatelessWidget {
+class TransactionListScreen extends StatefulWidget {
   final AppDatabase db;
   const TransactionListScreen({Key? key, required this.db}) : super(key: key);
+
+  @override
+  _TransactionListScreenState createState() => _TransactionListScreenState();
+}
+
+class _TransactionListScreenState extends State<TransactionListScreen> {
+  String _currencySymbol = '₹';
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrencySymbol();
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload currency when screen becomes visible again
+    _loadCurrencySymbol();
+  }
+  
+  Future<void> _loadCurrencySymbol() async {
+    final symbol = await CurrencyService.getCurrencySymbol();
+    setState(() {
+      _currencySymbol = symbol;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +50,7 @@ class TransactionListScreen extends StatelessWidget {
         ],
       ),
       body: StreamBuilder<List<Transaction>>(
-        stream: db.select(db.transactions).watch(),
+        stream: widget.db.select(widget.db.transactions).watch(),
         builder: (context, snapshot) {
           final txs = snapshot.data ?? [];
           if (txs.isEmpty) {
@@ -33,7 +61,7 @@ class TransactionListScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final tx = txs[index];
               final dateStr = DateFormat.yMMMd().format(tx.date);
-              final amountStr = NumberFormat.currency(symbol: '₹', decimalDigits: 2).format(tx.amount);
+              final amountStr = NumberFormat.currency(symbol: _currencySymbol, decimalDigits: 2).format(tx.amount);
               final isIncome = tx.type == 'Income';
               return ListTile(
                 leading: Icon(
@@ -50,7 +78,7 @@ class TransactionListScreen extends StatelessWidget {
                 trailing: PopupMenuButton<String>(
                   onSelected: (value) async {
                     if (value == 'delete') {
-                      await db.delete(db.transactions).delete(tx);
+                      await widget.db.delete(widget.db.transactions).delete(tx);
                     } else if (value == 'edit') {
                       Navigator.pushNamed(context, '/add_transaction', arguments: tx)
                           .then((_) => {});
