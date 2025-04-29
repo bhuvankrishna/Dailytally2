@@ -4,6 +4,7 @@ import 'screens/category_list_screen.dart';
 import 'screens/add_category_screen.dart';
 import 'screens/transaction_list_screen.dart';
 import 'screens/add_transaction_screen.dart';
+import 'screens/home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,8 +40,9 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      initialRoute: '/categories',
+      initialRoute: '/',
       routes: {
+        '/': (ctx) => HomeScreen(db: db),
         '/categories': (ctx) => CategoryListScreen(db: db),
         '/add_category': (ctx) {
           final cat = ModalRoute.of(ctx)!.settings.arguments as Category?;

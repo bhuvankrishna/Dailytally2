@@ -142,7 +142,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               TextFormField(
                 controller: _descController,
                 decoration: const InputDecoration(labelText: 'Description'),
-                validator: (v) => v?.isEmpty == true ? 'Enter description' : null,
+                // Description is optional
               ),
               const SizedBox(height: 16),
               TextFormField(
