@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/app_database.dart';
 import '../services/report_service.dart';
 import '../services/currency_service.dart';
+import 'calendar_view_screen.dart';
 
 class ReportsScreen extends StatefulWidget {
   final AppDatabase db;
@@ -99,6 +100,20 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reports'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_month),
+            tooltip: 'Calendar View',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CalendarViewScreen(db: widget.db),
+                ),
+              );
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
