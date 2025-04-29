@@ -33,7 +33,7 @@ class TransactionListScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final tx = txs[index];
               final dateStr = DateFormat.yMMMd().format(tx.date);
-              final amountStr = NumberFormat.currency(symbol: '\$', decimalDigits: 2).format(tx.amount);
+              final amountStr = NumberFormat.currency(symbol: '₹', decimalDigits: 2).format(tx.amount);
               final isIncome = tx.type == 'Income';
               return ListTile(
                 leading: Icon(
