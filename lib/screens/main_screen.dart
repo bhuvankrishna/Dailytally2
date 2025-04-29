@@ -3,6 +3,7 @@ import '../models/app_database.dart';
 import 'home_screen.dart';
 import 'transaction_list_screen.dart';
 import 'category_list_screen.dart';
+import 'reports_screen.dart';
 import 'settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -24,6 +25,7 @@ class _MainScreenState extends State<MainScreen> {
       HomeScreen(db: widget.db),
       TransactionListScreen(db: widget.db),
       CategoryListScreen(db: widget.db),
+      ReportsScreen(db: widget.db),
       const SettingsScreen(),
     ];
   }
@@ -52,6 +54,10 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.category),
             label: 'Categories',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Reports',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
