@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/app_database.dart';
-import 'settings_screen.dart';
+import '../services/currency_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final AppDatabase db;
@@ -28,10 +28,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   
   Future<void> _loadCurrencySymbol() async {
-    final symbol = await CurrencyService.getCurrencySymbol();
-    setState(() {
-      _currencySymbol = symbol;
-    });
+    try {
+      final symbol = await CurrencyService.getCurrencySymbol();
+      setState(() {
+        _currencySymbol = symbol;
+      });
+    } catch (e) {
+      // Fallback to default if there's an error
+      setState(() {
+        _currencySymbol = '₹';
+      });
+    }
   }
 
   @override

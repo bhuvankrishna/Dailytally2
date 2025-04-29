@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/app_database.dart';
-import 'settings_screen.dart';
+import '../services/export_service.dart';
+import '../services/currency_service.dart';
 
 class TransactionListScreen extends StatefulWidget {
   final AppDatabase db;
@@ -28,10 +29,44 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   }
   
   Future<void> _loadCurrencySymbol() async {
-    final symbol = await CurrencyService.getCurrencySymbol();
-    setState(() {
-      _currencySymbol = symbol;
-    });
+    try {
+      final symbol = await CurrencyService.getCurrencySymbol();
+      setState(() {
+        _currencySymbol = symbol;
+      });
+    } catch (e) {
+      // Fallback to default if there's an error
+      setState(() {
+        _currencySymbol = '₹';
+      });
+    }
+  }
+  
+  Future<void> _exportTransactionsToCSV() async {
+    try {
+      // Create export service
+      final exportService = ExportService(widget.db);
+      
+      // Show loading indicator
+      ExportService.showLoadingDialog(context, 'Exporting transactions...');
+      
+      // Export transactions to CSV
+      final filePath = await exportService.exportTransactionsToCSV(_currencySymbol);
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Show success message with file path
+      ExportService.showSuccessDialog(context, filePath);
+    } catch (e) {
+      // Close loading dialog if open
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      
+      // Show error message
+      ExportService.showErrorSnackBar(context, 'Error exporting data: $e');
+    }
   }
 
   @override
@@ -40,6 +75,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       appBar: AppBar(
         title: const Text('Transactions'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download),
+            tooltip: 'Export to CSV',
+            onPressed: () => _exportTransactionsToCSV(),
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {

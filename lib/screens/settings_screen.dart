@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/currency_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -9,12 +10,10 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  static const String _currencyPrefKey = 'currency_code';
-  static const String _currencySymbolPrefKey = 'currency_symbol';
-  
   String _selectedCurrencyCode = 'INR';
   String _selectedCurrencySymbol = '₹';
   
+  // Define currencies list
   final List<Map<String, String>> _currencies = [
     {'code': 'INR', 'name': 'Indian Rupee', 'symbol': '₹'},
     {'code': 'USD', 'name': 'US Dollar', 'symbol': '\$'},
@@ -34,16 +33,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString('currency_code') ?? 'INR';
+    final symbol = prefs.getString('currency_symbol') ?? '₹';
+    
     setState(() {
-      _selectedCurrencyCode = prefs.getString(_currencyPrefKey) ?? 'INR';
-      _selectedCurrencySymbol = prefs.getString(_currencySymbolPrefKey) ?? '₹';
+      _selectedCurrencyCode = code;
+      _selectedCurrencySymbol = symbol;
     });
   }
 
   Future<void> _savePreferences() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_currencyPrefKey, _selectedCurrencyCode);
-    await prefs.setString(_currencySymbolPrefKey, _selectedCurrencySymbol);
+    await prefs.setString('currency_code', _selectedCurrencyCode);
+    await prefs.setString('currency_symbol', _selectedCurrencySymbol);
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
