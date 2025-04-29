@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/app_database.dart';
 import '../services/currency_service.dart';
+import 'calendar_view_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final AppDatabase db;
@@ -49,8 +50,14 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_month),
+            tooltip: 'Calendar View',
             onPressed: () {
-              // TODO: Implement date filter
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CalendarViewScreen(db: widget.db),
+                ),
+              );
             },
           ),
         ],

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/app_database.dart';
 import '../services/export_service.dart';
 import '../services/currency_service.dart';
+import 'calendar_view_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
   final AppDatabase db;
@@ -75,6 +76,18 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       appBar: AppBar(
         title: const Text('Transactions'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_month),
+            tooltip: 'Calendar View',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CalendarViewScreen(db: widget.db),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.file_download),
             tooltip: 'Export to CSV',
