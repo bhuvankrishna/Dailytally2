@@ -22,20 +22,31 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   bool _hasMoreTransactions = true;
   List<Transaction> _displayedTransactions = [];
   List<Transaction> _allTransactions = [];
+  List<Transaction> _filteredTransactions = [];
   bool _isLoading = false;
   final ScrollController _scrollController = ScrollController();
+  
+  // Search variables
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isSearching = false;
+  List<Category> _categories = [];
   
   @override
   void initState() {
     super.initState();
     _loadCurrencySymbol();
+    _loadCategories();
     _scrollController.addListener(_scrollListener);
+    _searchController.addListener(_onSearchChanged);
   }
   
   @override
   void dispose() {
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
     super.dispose();
   }
   
@@ -58,7 +69,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     final nextPageStart = (_currentPage + 1) * _pageSize;
     final nextPageEnd = nextPageStart + _pageSize;
     
-    if (nextPageStart >= _allTransactions.length) {
+    if (nextPageStart >= _filteredTransactions.length) {
       setState(() {
         _hasMoreTransactions = false;
         _isLoading = false;
@@ -66,15 +77,15 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       return;
     }
     
-    final nextPageItems = _allTransactions.sublist(
+    final nextPageItems = _filteredTransactions.sublist(
       nextPageStart,
-      nextPageEnd > _allTransactions.length ? _allTransactions.length : nextPageEnd
+      nextPageEnd > _filteredTransactions.length ? _filteredTransactions.length : nextPageEnd
     );
     
     setState(() {
       _displayedTransactions.addAll(nextPageItems);
       _currentPage++;
-      _hasMoreTransactions = nextPageEnd < _allTransactions.length;
+      _hasMoreTransactions = nextPageEnd < _filteredTransactions.length;
       _isLoading = false;
     });
   }
@@ -83,6 +94,58 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     _currentPage = 0;
     _hasMoreTransactions = true;
     _displayedTransactions = [];
+  }
+  
+  Future<void> _loadCategories() async {
+    try {
+      final cats = await widget.db.select(widget.db.categories).get();
+      setState(() {
+        _categories = cats;
+      });
+    } catch (e) {
+      // Handle error
+      print('Error loading categories: $e');
+    }
+  }
+  
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text.trim().toLowerCase();
+      _applySearch();
+    });
+  }
+  
+  void _applySearch() {
+    if (_searchQuery.isEmpty) {
+      _filteredTransactions = List.from(_allTransactions);
+    } else {
+      _filteredTransactions = _allTransactions.where((tx) {
+        // Search by description
+        final descriptionMatch = tx.description?.toLowerCase().contains(_searchQuery) ?? false;
+        
+        // Search by amount (convert amount to string and check if it contains the query)
+        final amountStr = tx.amount.toString();
+        final amountMatch = amountStr.contains(_searchQuery);
+        
+        // Search by category name
+        bool categoryMatch = false;
+        if (tx.categoryId != null) {
+          final category = _categories.firstWhere(
+            (cat) => cat.id == tx.categoryId,
+            orElse: () => Category(id: -1, name: '', type: ''),
+          );
+          categoryMatch = category.name.toLowerCase().contains(_searchQuery);
+        }
+        
+        return descriptionMatch || amountMatch || categoryMatch;
+      }).toList();
+    }
+    
+    // Reset pagination with filtered results
+    _resetPagination();
+    final firstPageEnd = _pageSize > _filteredTransactions.length ? _filteredTransactions.length : _pageSize;
+    _displayedTransactions = _filteredTransactions.sublist(0, firstPageEnd);
+    _hasMoreTransactions = firstPageEnd < _filteredTransactions.length;
   }
   
   @override
@@ -183,27 +246,63 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           // Update all transactions and reset pagination if data changed
           if (_allTransactions.isEmpty || _allTransactions.length != txs.length) {
             _allTransactions = txs;
-            _resetPagination();
+            _filteredTransactions = txs;
             
-            // Load first page
-            final firstPageEnd = _pageSize > _allTransactions.length ? _allTransactions.length : _pageSize;
-            _displayedTransactions = _allTransactions.sublist(0, firstPageEnd);
-            _currentPage = 0;
-            _hasMoreTransactions = firstPageEnd < _allTransactions.length;
+            // Apply search if there's an active search query
+            if (_searchQuery.isNotEmpty) {
+              _applySearch();
+            } else {
+              _resetPagination();
+              
+              // Load first page
+              final firstPageEnd = _pageSize > _filteredTransactions.length ? _filteredTransactions.length : _pageSize;
+              _displayedTransactions = _filteredTransactions.sublist(0, firstPageEnd);
+              _currentPage = 0;
+              _hasMoreTransactions = firstPageEnd < _filteredTransactions.length;
+            }
           }
           
           return RefreshIndicator(
             onRefresh: () async {
               _resetPagination();
-              final firstPageEnd = _pageSize > _allTransactions.length ? _allTransactions.length : _pageSize;
+              final firstPageEnd = _pageSize > _filteredTransactions.length ? _filteredTransactions.length : _pageSize;
               setState(() {
-                _displayedTransactions = _allTransactions.sublist(0, firstPageEnd);
+                _displayedTransactions = _filteredTransactions.sublist(0, firstPageEnd);
                 _currentPage = 0;
-                _hasMoreTransactions = firstPageEnd < _allTransactions.length;
+                _hasMoreTransactions = firstPageEnd < _filteredTransactions.length;
               });
             },
             child: Column(
               children: [
+                // Search bar
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search by description, category, or amount',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                    ),
+                  ),
+                ),
+                // Display message when search has no results
+                if (_searchQuery.isNotEmpty && _filteredTransactions.isEmpty)
+                  const Expanded(
+                    child: Center(
+                      child: Text('No transactions match your search'),
+                    ),
+                  ),
                 Expanded(
                   child: ListView.builder(
                     controller: _scrollController,
