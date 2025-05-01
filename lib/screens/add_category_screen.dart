@@ -8,7 +8,7 @@ class AddCategoryScreen extends StatefulWidget {
   const AddCategoryScreen({Key? key, required this.db, this.category}) : super(key: key);
 
   @override
-  _AddCategoryScreenState createState() => _AddCategoryScreenState();
+  State<AddCategoryScreen> createState() => _AddCategoryScreenState();
 }
 
 class _AddCategoryScreenState extends State<AddCategoryScreen> {
@@ -20,7 +20,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.category?.name);
-    _type = widget.category?.type as String? ?? 'Expense';
+    _type = widget.category?.type ?? 'Expense';
   }
 
   @override
