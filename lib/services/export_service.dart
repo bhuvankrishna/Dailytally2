@@ -79,7 +79,6 @@ class ExportService {
         return result; // Return the path chosen by user
       }
     } catch (e) {
-      print('Error using FilePicker: $e');
       // Fall through to default save method
     }
     

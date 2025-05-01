@@ -11,7 +11,6 @@ class CurrencyService {
       return prefs.getString('currency_symbol') ?? _defaultCurrencySymbol;
     } catch (e) {
       // Fallback to default if there's an error
-      print('Error getting currency symbol: $e');
       return _defaultCurrencySymbol;
     }
   }

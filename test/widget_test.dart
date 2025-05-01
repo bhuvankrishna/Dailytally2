@@ -5,26 +5,32 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dailytally/main.dart';
+import 'package:dailytally/models/app_database.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  // Create an in-memory database for testing
+  late AppDatabase testDb;
+  
+  setUp(() {
+    // For testing purposes, we'll create a mock database
+    testDb = AppDatabase();
+  });
+  
+  tearDown(() async {
+    await testDb.close();
+  });
+  
+  testWidgets('App smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(db: testDb));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that the app title is displayed
+    expect(find.text('Daily Tally'), findsOneWidget);
+    
+    // This is a basic smoke test to verify the app builds
+    // More specific tests would be added for actual app functionality
   });
 }
