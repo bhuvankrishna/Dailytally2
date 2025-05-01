@@ -109,6 +109,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           if (txs.isEmpty) {
             return const Center(child: Text('No transactions yet'));
           }
+          
+          // Sort transactions by date (newest first)
+          txs.sort((a, b) => b.date.compareTo(a.date));
+          
           return ListView.builder(
             itemCount: txs.length,
             itemBuilder: (context, index) {
