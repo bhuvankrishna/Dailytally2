@@ -2,12 +2,13 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+// Add path as a direct dependency in pubspec.yaml
 import 'package:path/path.dart' as p;
 
 part 'app_database.g.dart';
 
-enum CategoryType { Income, Expense }
-enum BudgetPeriod { Monthly, Weekly, Yearly }
+enum CategoryType { income, expense }
+enum BudgetPeriod { monthly, weekly, yearly }
 
 class Categories extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -64,29 +65,29 @@ class AppDatabase extends _$AppDatabase {
     if (existing.isEmpty) {
       await batch((b) {
         b.insertAll(categories, [
-          CategoriesCompanion.insert(name: 'Salary', type: CategoryType.Income.name),
-          CategoriesCompanion.insert(name: 'Freelance', type: CategoryType.Income.name),
-          CategoriesCompanion.insert(name: 'Investments', type: CategoryType.Income.name),
-          CategoriesCompanion.insert(name: 'Rent', type: CategoryType.Income.name),
-          CategoriesCompanion.insert(name: 'Other Income', type: CategoryType.Income.name),
-          CategoriesCompanion.insert(name: 'Wallet', type: CategoryType.Income.name),
+          CategoriesCompanion.insert(name: 'Salary', type: CategoryType.income.name),
+          CategoriesCompanion.insert(name: 'Freelance', type: CategoryType.income.name),
+          CategoriesCompanion.insert(name: 'Investments', type: CategoryType.income.name),
+          CategoriesCompanion.insert(name: 'Rent', type: CategoryType.income.name),
+          CategoriesCompanion.insert(name: 'Other Income', type: CategoryType.income.name),
+          CategoriesCompanion.insert(name: 'Wallet', type: CategoryType.income.name),
 
-          CategoriesCompanion.insert(name: 'Food', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Transport', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Utilities', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Entertainment', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Utilities', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Rent', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Shopping', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Healthcare', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Education', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Other expenses', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Fast Tag', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Fuel', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Groceries', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Home loan', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Electricity', type: CategoryType.Expense.name),
-          CategoriesCompanion.insert(name: 'Water', type: CategoryType.Expense.name),
+          CategoriesCompanion.insert(name: 'Food', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Transport', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Utilities', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Entertainment', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Utilities', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Rent', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Shopping', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Healthcare', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Education', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Other expenses', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Fast Tag', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Fuel', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Groceries', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Home loan', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Electricity', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Water', type: CategoryType.expense.name),
         ]);
       });
     }
