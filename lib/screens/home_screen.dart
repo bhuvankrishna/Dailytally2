@@ -135,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               Text(
                                 currencyFormat.format(totalIncome),
                                 style: const TextStyle(
-                                  fontSize: 20,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.green,
                                 ),
@@ -165,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               Text(
                                 currencyFormat.format(totalExpense),
                                 style: const TextStyle(
-                                  fontSize: 20,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.red,
                                 ),
