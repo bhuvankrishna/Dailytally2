@@ -471,7 +471,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           final isIncome = tx.type.toLowerCase() == 'income';
           return ListTile(
             contentPadding: EdgeInsets.zero,
-            title: Text(tx.description ?? 'No description'),
+            title: Text(tx.description.isEmpty ? 'No description' : tx.description),
             subtitle: Text(dateFormat.format(tx.date)),
             trailing: Text(
               '$_currencySymbol ${tx.amount.toStringAsFixed(2)}',

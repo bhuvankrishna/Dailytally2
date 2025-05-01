@@ -171,7 +171,7 @@ class _CalendarViewScreenState extends State<CalendarViewScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: ListTile(
                 title: Text(
-                  tx.description ?? 'No description',
+                  tx.description.isEmpty ? 'No description' : tx.description,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text('Category: $categoryName'),
