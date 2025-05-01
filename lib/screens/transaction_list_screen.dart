@@ -29,7 +29,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   // Search variables
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  bool _isSearching = false;
   List<Category> _categories = [];
   
   @override
@@ -121,7 +120,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     } else {
       _filteredTransactions = _allTransactions.where((tx) {
         // Search by description
-        final descriptionMatch = tx.description?.toLowerCase().contains(_searchQuery) ?? false;
+        final descriptionMatch = tx.description.toLowerCase().contains(_searchQuery);
         
         // Search by amount (convert amount to string and check if it contains the query)
         final amountStr = tx.amount.toString();
