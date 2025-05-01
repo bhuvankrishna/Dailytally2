@@ -26,7 +26,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final tx = widget.transaction;
     _type = tx != null
         ? CategoryType.values.firstWhere((e) => e.name == tx.type)
-        : CategoryType.Expense;
+        : CategoryType.expense;
     _selectedCategoryId = tx?.categoryId;
     _date = tx?.date ?? DateTime.now();
     _descController = TextEditingController(text: tx?.description);
