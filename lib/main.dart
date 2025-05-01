@@ -4,7 +4,6 @@ import 'screens/category_list_screen.dart';
 import 'screens/add_category_screen.dart';
 import 'screens/transaction_list_screen.dart';
 import 'screens/add_transaction_screen.dart';
-import 'screens/home_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/main_screen.dart';
 
