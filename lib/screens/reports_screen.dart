@@ -21,6 +21,12 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   ReportData? _currentReport;
   bool _isLoading = true;
   
+  // Date selection variables
+  DateTime _selectedDate = DateTime.now();
+  DateTime _selectedWeekStart = DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1));
+  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTime _selectedQuarter = DateTime(DateTime.now().year, ((DateTime.now().month - 1) ~/ 3) * 3 + 1, 1);
+  
   @override
   void initState() {
     super.initState();
@@ -80,7 +86,24 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     });
     
     try {
-      final report = await _reportService.getReportData(_currentPeriod);
+      // Use the selected date based on the current period
+      DateTime customDate;
+      switch (_currentPeriod) {
+        case ReportPeriod.daily:
+          customDate = _selectedDate;
+          break;
+        case ReportPeriod.weekly:
+          customDate = _selectedWeekStart;
+          break;
+        case ReportPeriod.monthly:
+          customDate = _selectedMonth;
+          break;
+        case ReportPeriod.quarterly:
+          customDate = _selectedQuarter;
+          break;
+      }
+      
+      final report = await _reportService.getReportData(_currentPeriod, customDate);
       setState(() {
         _currentReport = report;
         _isLoading = false;
@@ -132,6 +155,83 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     );
   }
   
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _loadReportData();
+      });
+    }
+  }
+
+  Future<void> _selectWeek(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedWeekStart,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      selectableDayPredicate: (DateTime date) {
+        // Only allow Mondays to be selected
+        return date.weekday == DateTime.monday;
+      },
+      helpText: 'SELECT WEEK STARTING ON MONDAY',
+    );
+    if (picked != null && picked != _selectedWeekStart) {
+      setState(() {
+        _selectedWeekStart = picked;
+        _loadReportData();
+      });
+    }
+  }
+
+  Future<void> _selectMonth(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedMonth,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDatePickerMode: DatePickerMode.year,
+      selectableDayPredicate: (DateTime date) {
+        // Only allow 1st day of month to be selected
+        return date.day == 1;
+      },
+      helpText: 'SELECT MONTH',
+    );
+    if (picked != null && picked != _selectedMonth) {
+      setState(() {
+        _selectedMonth = picked;
+        _loadReportData();
+      });
+    }
+  }
+
+  Future<void> _selectQuarter(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedQuarter,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDatePickerMode: DatePickerMode.year,
+      selectableDayPredicate: (DateTime date) {
+        // Only allow first day of quarters (Jan 1, Apr 1, Jul 1, Oct 1)
+        return date.day == 1 && (date.month == 1 || date.month == 4 || date.month == 7 || date.month == 10);
+      },
+      helpText: 'SELECT QUARTER',
+    );
+    if (picked != null && picked != _selectedQuarter) {
+      setState(() {
+        _selectedQuarter = picked;
+        _loadReportData();
+      });
+    }
+  }
+  
   Widget _buildReportContent() {
     final report = _currentReport!;
     
@@ -154,34 +254,76 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   
   Widget _buildReportHeader(ReportData report) {
     String periodTitle;
+    IconData calendarIcon;
+    Function() selectDateFunction;
+    String dateFormat;
+    String dateText;
+    
     switch (_currentPeriod) {
       case ReportPeriod.daily:
         periodTitle = 'Daily Report';
+        calendarIcon = Icons.calendar_today;
+        selectDateFunction = () => _selectDate(context);
+        dateFormat = 'MMM d, yyyy';
+        dateText = DateFormat(dateFormat).format(_selectedDate);
         break;
       case ReportPeriod.weekly:
         periodTitle = 'Weekly Report';
+        calendarIcon = Icons.date_range;
+        selectDateFunction = () => _selectWeek(context);
+        dateText = 'Week of ${DateFormat('MMM d, yyyy').format(_selectedWeekStart)}';
         break;
       case ReportPeriod.monthly:
         periodTitle = 'Monthly Report';
+        calendarIcon = Icons.calendar_month;
+        selectDateFunction = () => _selectMonth(context);
+        dateText = DateFormat('MMMM yyyy').format(_selectedMonth);
         break;
       case ReportPeriod.quarterly:
         periodTitle = 'Quarterly Report';
+        calendarIcon = Icons.calendar_today_outlined;
+        selectDateFunction = () => _selectQuarter(context);
+        final quarterNumber = (_selectedQuarter.month - 1) ~/ 3 + 1;
+        dateText = 'Q$quarterNumber ${_selectedQuarter.year}';
         break;
     }
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          periodTitle,
-          style: Theme.of(context).textTheme.headlineMedium,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              periodTitle,
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            IconButton(
+              icon: Icon(calendarIcon),
+              onPressed: selectDateFunction,
+              tooltip: 'Select date',
+            ),
+          ],
         ),
         const SizedBox(height: 8),
+        Row(
+          children: [
+            Icon(Icons.date_range, size: 16, color: Colors.grey[600]),
+            const SizedBox(width: 4),
+            Text(
+              dateText,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
         Text(
           report.periodLabel,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: Colors.grey[600],
-          ),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+              ),
         ),
       ],
     );
