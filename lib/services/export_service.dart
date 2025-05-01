@@ -50,7 +50,7 @@ class ExportService {
         dateFormat.format(tx.date),
         tx.type.toString(),
         categoryName,
-        tx.description ?? '',
+        tx.description.isEmpty ? '' : tx.description,
         tx.amount.toStringAsFixed(2),
       ]);
     }
