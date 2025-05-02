@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/app_database.dart';
 import '../services/export_service.dart';
+import '../services/import_service.dart';
 import '../services/currency_service.dart';
 import 'calendar_view_screen.dart';
 
@@ -194,6 +195,39 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       ExportService.showErrorSnackBar(context, 'Error exporting data: $e');
     }
   }
+  
+  Future<void> _importTransactionsFromCSV() async {
+    try {
+      // Create import service
+      final importService = ImportService(widget.db);
+      
+      // Show loading indicator
+      ImportService.showLoadingDialog(context, 'Importing transactions...');
+      
+      // Import transactions from CSV
+      final result = await importService.importTransactionsFromCSV();
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Show result dialog
+      ImportService.showResultDialog(context, result);
+      
+      // Reset pagination to show new transactions
+      setState(() {
+        _resetPagination();
+        _loadMoreTransactions();
+      });
+    } catch (e) {
+      // Close loading dialog if open
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      
+      // Show error message
+      ImportService.showErrorSnackBar(context, 'Error importing data: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -217,6 +251,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             icon: const Icon(Icons.file_download),
             tooltip: 'Export to CSV',
             onPressed: () => _exportTransactionsToCSV(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.file_upload),
+            tooltip: 'Import from CSV',
+            onPressed: () => _importTransactionsFromCSV(),
           ),
           IconButton(
             icon: const Icon(Icons.add),
