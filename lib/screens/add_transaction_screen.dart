@@ -115,7 +115,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 stream: widget.db.select(widget.db.categories).watch(),
                 builder: (ctx, snap) {
                   final cats = (snap.data ?? [])
-                      .where((c) => c.type == _type.name)
+                      .where((c) => c.type.toLowerCase() == _type.name.toLowerCase())
                       .toList();
                   return DropdownButtonFormField<int>(
                     value: _selectedCategoryId,

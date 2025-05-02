@@ -73,11 +73,11 @@ class _HomeScreenState extends State<HomeScreen> {
             
             final transactions = snapshot.data ?? [];
             final totalIncome = transactions
-                .where((tx) => tx.type == 'Income')
+                .where((tx) => tx.type.toLowerCase() == 'income')
                 .fold(0.0, (sum, tx) => sum + tx.amount);
             
             final totalExpense = transactions
-                .where((tx) => tx.type == 'Expense')
+                .where((tx) => tx.type.toLowerCase() == 'expense')
                 .fold(0.0, (sum, tx) => sum + tx.amount);
             
             final balance = totalIncome - totalExpense;
@@ -195,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           itemCount: transactions.length > 5 ? 5 : transactions.length,
                           itemBuilder: (context, index) {
                             final tx = transactions[index];
-                            final isIncome = tx.type == 'Income';
+                            final isIncome = tx.type.toLowerCase() == 'income';
                             return ListTile(
                               leading: CircleAvatar(
                                 backgroundColor: isIncome ? Colors.green : Colors.red,
