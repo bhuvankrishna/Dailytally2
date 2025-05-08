@@ -40,7 +40,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
               stream: widget.db.select(widget.db.categories).watch(),
               builder: (context, snapshot) {
                 final cats = (snapshot.data ?? [])
-                    .where((c) => c.type == 'Income')
+                    .where((c) => c.type.toLowerCase() == 'income')
                     .toList();
                 return ListView.builder(
                   itemCount: cats.length,
@@ -81,7 +81,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
               stream: widget.db.select(widget.db.categories).watch(),
               builder: (context, snapshot) {
                 final cats = (snapshot.data ?? [])
-                    .where((c) => c.type == 'Expense')
+                    .where((c) => c.type.toLowerCase() == 'expense')
                     .toList();
                 return ListView.builder(
                   itemCount: cats.length,
