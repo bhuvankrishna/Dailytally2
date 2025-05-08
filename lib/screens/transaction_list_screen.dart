@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/app_database.dart';
+import '../repositories/transaction_repository.dart';
 import '../services/export_service.dart';
 import '../services/import_service.dart';
 import '../services/currency_service.dart';
@@ -8,7 +9,13 @@ import 'calendar_view_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
   final AppDatabase db;
-  const TransactionListScreen({Key? key, required this.db}) : super(key: key);
+  final TransactionRepository repository;
+  
+  const TransactionListScreen({
+    Key? key, 
+    required this.db,
+    required this.repository,
+  }) : super(key: key);
 
   @override
   _TransactionListScreenState createState() => _TransactionListScreenState();
@@ -151,8 +158,41 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Reload currency when screen becomes visible again
-    _loadCurrencySymbol();
+    _resetPagination();
+    _fetchTransactions();
+  }
+  
+  Future<void> _fetchTransactions() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      // Use the repository to get transactions
+      final transactions = await widget.repository.getAllTransactions();
+      
+      setState(() {
+        _allTransactions = transactions;
+        _applySearch(); // This will update _filteredTransactions
+        
+        // Load first page
+        final firstPageEnd = _pageSize > _filteredTransactions.length ? 
+            _filteredTransactions.length : _pageSize;
+        _displayedTransactions = _filteredTransactions.sublist(0, firstPageEnd);
+        _currentPage = 0;
+        _hasMoreTransactions = _filteredTransactions.length > _pageSize;
+      });
+    } catch (e) {
+      print('Error fetching transactions: $e');
+      // Show error to user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load transactions: $e'))
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
   
   Future<void> _loadCurrencySymbol() async {
@@ -171,29 +211,36 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   
   Future<void> _exportTransactionsToCSV() async {
     try {
-      // Create export service
-      final exportService = ExportService(widget.db);
+      final exportService = ExportService();
+      final transactions = await widget.repository.getAllTransactions();
       
-      // Show loading indicator
-      ExportService.showLoadingDialog(context, 'Exporting transactions...');
-      
-      // Export transactions to CSV
-      final filePath = await exportService.exportTransactionsToCSV(_currencySymbol);
-      
-      // Close loading dialog
-      Navigator.of(context).pop();
-      
-      // Show success message with file path
-      ExportService.showSuccessDialog(context, filePath);
-    } catch (e) {
-      // Close loading dialog if open
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
+      if (transactions.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No transactions to export')),
+        );
+        return;
       }
       
-      // Show error message
-      ExportService.showErrorSnackBar(context, 'Error exporting data: $e');
-    }
+      final result = await exportService.exportTransactionsToCSV(
+        transactions, 
+        _categories,
+        _currencySymbol,
+      );
+      
+      if (result.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Exported to ${result.filePath}')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: ${result.error}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Export failed: $e')),
+      );
+    }  
   }
   
   Future<void> _importTransactionsFromCSV() async {
@@ -377,7 +424,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         trailing: PopupMenuButton<String>(
                           onSelected: (value) async {
                             if (value == 'delete') {
-                              await widget.db.delete(widget.db.transactions).delete(tx);
+                              await widget.repository.deleteTransaction(tx.id);
+                              _fetchTransactions(); // Refresh the list
                             } else if (value == 'edit') {
                               Navigator.pushNamed(context, '/add_transaction', arguments: tx)
                                   .then((_) => {});

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/app_database.dart';
+import '../repositories/transaction_repository.dart';
 import 'home_screen.dart';
 import 'transaction_list_screen.dart';
 import 'category_list_screen.dart';
@@ -8,7 +9,13 @@ import 'settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final AppDatabase db;
-  const MainScreen({Key? key, required this.db}) : super(key: key);
+  final TransactionRepository repository;
+  
+  const MainScreen({
+    Key? key, 
+    required this.db,
+    required this.repository,
+  }) : super(key: key);
 
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -22,11 +29,11 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _screens = [
-      HomeScreen(db: widget.db),
-      TransactionListScreen(db: widget.db),
+      HomeScreen(db: widget.db, repository: widget.repository),
+      TransactionListScreen(db: widget.db, repository: widget.repository),
       CategoryListScreen(db: widget.db),
-      ReportsScreen(db: widget.db),
-      const SettingsScreen(),
+      ReportsScreen(db: widget.db, repository: widget.repository),
+      SettingsScreen(repository: widget.repository),
     ];
   }
 
