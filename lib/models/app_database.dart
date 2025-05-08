@@ -88,6 +88,9 @@ class AppDatabase extends _$AppDatabase {
           CategoriesCompanion.insert(name: 'Home loan', type: CategoryType.expense.name),
           CategoriesCompanion.insert(name: 'Electricity', type: CategoryType.expense.name),
           CategoriesCompanion.insert(name: 'Water', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Loan', type: CategoryType.expense.name),
+          CategoriesCompanion.insert(name: 'Investments', type: CategoryType.expense.name),
+
         ]);
       });
     }
