@@ -15,6 +15,7 @@ class ImportService {
   
   /// Imports transactions from a CSV file
   /// Returns a summary of the import operation
+  /// Will validate that all categories exist before importing
   Future<ImportResult> importTransactionsFromCSV() async {
     // Let user pick a CSV file
     final result = await FilePicker.platform.pickFiles(
@@ -48,6 +49,9 @@ class ImportService {
       categoryNameToId[cat.name.toLowerCase()] = cat.id;
     }
     
+    // Set to track unknown categories
+    final unknownCategories = <String>{};
+    
     // Prepare result tracking
     final importResult = ImportResult();
     final dateFormat = DateFormat('yyyy-MM-dd');
@@ -78,7 +82,34 @@ class ImportService {
           'Looking for: date (index $dateIndex), type (index $typeIndex), amount (index $amountIndex)');
     }
     
-    // Process data rows
+    // First pass: Check all categories in the CSV file
+    for (int i = 1; i < csvTable.length; i++) {
+      final row = csvTable[i];
+      
+      // Skip empty rows
+      if (row.isEmpty || row.every((cell) => cell.toString().trim().isEmpty)) {
+        continue;
+      }
+      
+      // Check if the category exists
+      if (categoryIndex != -1 && row.length > categoryIndex) {
+        final categoryStr = row[categoryIndex].toString().trim();
+        if (categoryStr.isNotEmpty) {
+          final categoryId = categoryNameToId[categoryStr.toLowerCase()];
+          if (categoryId == null) {
+            unknownCategories.add(categoryStr);
+          }
+        }
+      }
+    }
+    
+    // If unknown categories found, stop import and return them
+    if (unknownCategories.isNotEmpty) {
+      importResult.unknownCategories = unknownCategories.toList()..sort();
+      return importResult;
+    }
+    
+    // Process data rows for actual import
     for (int i = 1; i < csvTable.length; i++) {
       final row = csvTable[i];
       
@@ -267,19 +298,51 @@ class ImportService {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Import Results'),
+          title: Text(result.unknownCategories.isEmpty ? 'Import Results' : 'Import Failed'),
           content: material.Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Transactions imported: ${result.imported}'),
-              if (result.categoriesCreated > 0)
-                Text('New categories created: ${result.categoriesCreated}'),
-              if (result.duplicates.isNotEmpty)
-                Text('Duplicate IDs skipped: ${result.duplicates.length}'),
-              if (result.errors.isNotEmpty)
-                Text('Errors encountered: ${result.errors.length}'),
-              if (result.duplicates.isNotEmpty) ...[
+              if (result.unknownCategories.isNotEmpty) ...[  
+                const Text(
+                  'Import failed because the following categories in your CSV file do not exist in the app:',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 100,
+                  width: double.maxFinite,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: result.unknownCategories.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Text(result.unknownCategories[index],
+                            style: const TextStyle(fontSize: 12)),
+                      );
+                    },
+                  ),
+                ),
+              
+                const SizedBox(height: 8),
+                const Text(
+                  'Please add these categories to your app before importing, or update your CSV file to use existing categories.',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              ] else ... [  
+                Text('Transactions imported: ${result.imported}'),
+                if (result.categoriesCreated > 0)
+                  Text('New categories created: ${result.categoriesCreated}'),
+                if (result.duplicates.isNotEmpty)
+                  Text('Duplicate IDs skipped: ${result.duplicates.length}'),
+                if (result.errors.isNotEmpty)
+                  Text('Errors encountered: ${result.errors.length}'),
+                if (result.duplicates.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 const Text('Duplicate IDs were found in these rows:',
                     style: TextStyle(fontWeight: FontWeight.bold)),
@@ -310,6 +373,7 @@ class ImportService {
                   ),
                 ),
               ],
+              ]
             ],
           ),
           actions: [
@@ -337,6 +401,7 @@ class ImportResult {
   int categoriesCreated = 0;
   List<int> duplicates = [];
   List<ImportError> errors = [];
+  List<String> unknownCategories = [];
 }
 
 /// Represents an error during import

@@ -202,9 +202,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       final importService = ImportService(widget.db);
       
       // Show loading indicator
-      ImportService.showLoadingDialog(context, 'Importing transactions...');
+      ImportService.showLoadingDialog(context, 'Validating CSV file...');
       
-      // Import transactions from CSV
+      // Import transactions from CSV (with category validation)
       final result = await importService.importTransactionsFromCSV();
       
       // Close loading dialog
@@ -213,11 +213,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       // Show result dialog
       ImportService.showResultDialog(context, result);
       
-      // Reset pagination to show new transactions
-      setState(() {
-        _resetPagination();
-        _loadMoreTransactions();
-      });
+      // Only reset pagination if import was successful (no unknown categories)
+      if (result.unknownCategories.isEmpty && result.imported > 0) {
+        setState(() {
+          _resetPagination();
+          _loadMoreTransactions();
+        });
+      }
     } catch (e) {
       // Close loading dialog if open
       if (Navigator.of(context).canPop()) {
