@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../repositories/transaction_repository.dart';
+import '../repositories/remote_transaction_repository.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  final TransactionRepository repository;
+  
+  const SettingsScreen({
+    Key? key,
+    required this.repository,
+  }) : super(key: key);
 
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
@@ -11,6 +18,12 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   String _selectedCurrencyCode = 'INR';
   String _selectedCurrencySymbol = '₹';
+  
+  // Remote repository settings
+  bool _useRemoteRepository = false;
+  String _apiBaseUrl = '';
+  String _apiKey = '';
+  RemoteDataSourceType _remoteSourceType = RemoteDataSourceType.restApi;
   
   // Define currencies list
   final List<Map<String, String>> _currencies = [
@@ -34,10 +47,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     final code = prefs.getString('currency_code') ?? 'INR';
     final symbol = prefs.getString('currency_symbol') ?? '₹';
+    final useRemote = prefs.getBool('use_remote_repository') ?? false;
+    final apiBaseUrl = prefs.getString('api_base_url') ?? '';
+    final apiKey = prefs.getString('api_key') ?? '';
+    final sourceTypeString = prefs.getString('remote_source_type') ?? 'restApi';
+    
+    // Convert string to enum
+    RemoteDataSourceType sourceType;
+    switch (sourceTypeString.toLowerCase()) {
+      case 'firebase':
+        sourceType = RemoteDataSourceType.firebase;
+        break;
+      case 'supabase':
+        sourceType = RemoteDataSourceType.supabase;
+        break;
+      default:
+        sourceType = RemoteDataSourceType.restApi;
+    }
     
     setState(() {
       _selectedCurrencyCode = code;
       _selectedCurrencySymbol = symbol;
+      _useRemoteRepository = useRemote;
+      _apiBaseUrl = apiBaseUrl;
+      _apiKey = apiKey;
+      _remoteSourceType = sourceType;
     });
   }
 
@@ -46,9 +80,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setString('currency_code', _selectedCurrencyCode);
     await prefs.setString('currency_symbol', _selectedCurrencySymbol);
     
+    // Save remote repository settings
+    await prefs.setBool('use_remote_repository', _useRemoteRepository);
+    await prefs.setString('api_base_url', _apiBaseUrl);
+    await prefs.setString('api_key', _apiKey);
+    
+    // Convert enum to string
+    String sourceTypeString;
+    switch (_remoteSourceType) {
+      case RemoteDataSourceType.firebase:
+        sourceTypeString = 'firebase';
+        break;
+      case RemoteDataSourceType.supabase:
+        sourceTypeString = 'supabase';
+        break;
+      default:
+        sourceTypeString = 'restApi';
+    }
+    await prefs.setString('remote_source_type', sourceTypeString);
+    
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Settings saved. Please navigate to other screens to see changes.'),
+        content: Text('Settings saved. Please restart the app for repository changes to take effect.'),
         duration: Duration(seconds: 3),
       ),
     );
@@ -101,6 +154,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }).toList(),
             ),
           ),
+          const SizedBox(height: 20),
+          const SizedBox(height: 20),
+          const ListTile(
+            title: Text(
+              'Repository Settings',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ),
+          const Divider(),
+          SwitchListTile(
+            title: const Text('Use Remote Repository'),
+            subtitle: const Text('Enable cloud synchronization'),
+            value: _useRemoteRepository,
+            onChanged: (bool value) {
+              setState(() {
+                _useRemoteRepository = value;
+              });
+            },
+          ),
+          if (_useRemoteRepository) ...[  
+            ListTile(
+              title: const Text('Remote Source Type'),
+              trailing: DropdownButton<RemoteDataSourceType>(
+                value: _remoteSourceType,
+                onChanged: (RemoteDataSourceType? newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      _remoteSourceType = newValue;
+                    });
+                  }
+                },
+                items: RemoteDataSourceType.values.map<DropdownMenuItem<RemoteDataSourceType>>((type) {
+                  return DropdownMenuItem<RemoteDataSourceType>(
+                    value: type,
+                    child: Text(type.toString().split('.').last),
+                  );
+                }).toList(),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: TextField(
+                decoration: const InputDecoration(
+                  labelText: 'API Base URL',
+                  hintText: 'https://api.example.com',
+                ),
+                onChanged: (value) {
+                  _apiBaseUrl = value;
+                },
+                controller: TextEditingController(text: _apiBaseUrl),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: TextField(
+                decoration: const InputDecoration(
+                  labelText: 'API Key',
+                  hintText: 'Enter your API key',
+                ),
+                obscureText: true,
+                onChanged: (value) {
+                  _apiKey = value;
+                },
+                controller: TextEditingController(text: _apiKey),
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),

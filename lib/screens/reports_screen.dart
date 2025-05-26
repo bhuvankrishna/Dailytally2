@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/app_database.dart';
+import '../repositories/transaction_repository.dart';
 import '../services/report_service.dart';
 import '../services/currency_service.dart';
 import 'calendar_view_screen.dart';
 
 class ReportsScreen extends StatefulWidget {
   final AppDatabase db;
-  const ReportsScreen({Key? key, required this.db}) : super(key: key);
+  final TransactionRepository repository;
+  
+  const ReportsScreen({
+    Key? key, 
+    required this.db,
+    required this.repository,
+  }) : super(key: key);
 
   @override
   _ReportsScreenState createState() => _ReportsScreenState();
@@ -31,7 +38,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _reportService = ReportService(widget.db);
+    _reportService = ReportService(widget.db, widget.repository);
     _tabController.addListener(_handleTabChange);
     _loadCurrencySymbol();
     _loadReportData();
@@ -131,7 +138,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CalendarViewScreen(db: widget.db),
+                  builder: (context) => CalendarViewScreen(db: widget.db, repository: widget.repository),
                 ),
               );
             },

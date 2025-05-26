@@ -211,7 +211,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   
   Future<void> _exportTransactionsToCSV() async {
     try {
-      final exportService = ExportService();
+      final exportService = ExportService(widget.db);
       final transactions = await widget.repository.getAllTransactions();
       
       if (transactions.isEmpty) {
@@ -221,21 +221,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         return;
       }
       
-      final result = await exportService.exportTransactionsToCSV(
-        transactions, 
-        _categories,
-        _currencySymbol,
-      );
+      final filePath = await exportService.exportTransactionsToCSV(_currencySymbol);
       
-      if (result.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Exported to ${result.filePath}')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: ${result.error}')),
-        );
-      }
+      // Show success dialog
+      ExportService.showSuccessDialog(context, filePath);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Export failed: $e')),
@@ -291,7 +280,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CalendarViewScreen(db: widget.db),
+                  builder: (context) => CalendarViewScreen(db: widget.db, repository: widget.repository),
                 ),
               );
             },

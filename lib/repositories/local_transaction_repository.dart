@@ -47,20 +47,30 @@ class LocalTransactionRepository implements TransactionRepository {
 
   @override
   Future<List<Transaction>> getTransactionsByCategory(String category) async {
+    // Convert category string to int if possible
+    int categoryId;
+    try {
+      categoryId = int.parse(category);
+    } catch (e) {
+      // If conversion fails, return empty list
+      return [];
+    }
+    
     final query = _db.select(_db.transactions)
-      ..where((tbl) => tbl.category.equals(category));
+      ..where((tbl) => tbl.categoryId.equals(categoryId));
     return await query.get();
   }
 
   @override
   Future<List<Transaction>> getTransactionsByDateRange(
       DateTime startDate, DateTime endDate) async {
-    final query = _db.select(_db.transactions)
-      ..where((tbl) => tbl.date.isBiggerThanValue(
-          startDate.subtract(const Duration(seconds: 1))))
-      ..where((tbl) => tbl.date.isSmallerThanValue(
-          endDate.add(const Duration(seconds: 1))));
-    return await query.get();
+    // Get all transactions and filter manually
+    final allTransactions = await getAllTransactions();
+    
+    // Filter transactions by date range
+    return allTransactions.where((tx) {
+      return !tx.date.isBefore(startDate) && !tx.date.isAfter(endDate);
+    }).toList();
   }
 
   @override

@@ -67,7 +67,7 @@ class RemoteTransactionRepository implements TransactionRepository {
     return Transaction(
       id: json['id'],
       type: json['type'],
-      category: json['category'],
+      categoryId: json['categoryId'],
       amount: (json['amount'] as num).toDouble(),
       date: DateTime.parse(json['date']),
       description: json['description'] ?? '',
@@ -79,7 +79,7 @@ class RemoteTransactionRepository implements TransactionRepository {
     return {
       'id': transaction.id,
       'type': transaction.type,
-      'category': transaction.category,
+      'categoryId': transaction.categoryId,
       'amount': transaction.amount,
       'date': transaction.date.toIso8601String(),
       'description': transaction.description,
@@ -154,7 +154,7 @@ class RemoteTransactionRepository implements TransactionRepository {
       // Convert TransactionsCompanion to a regular map
       final transactionData = {
         'type': transaction.type.value,
-        'category': transaction.category.value,
+        'categoryId': transaction.categoryId.value,
         'amount': transaction.amount.value,
         'date': transaction.date.value.toIso8601String(),
         'description': transaction.description.value,
@@ -257,7 +257,7 @@ class RemoteTransactionRepository implements TransactionRepository {
     // For simplicity, we'll fetch all and filter client-side
     final allTransactions = await getAllTransactions();
     return allTransactions
-        .where((transaction) => transaction.category == category)
+        .where((transaction) => transaction.categoryId == category)
         .toList();
   }
 

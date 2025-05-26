@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/app_database.dart';
+import '../repositories/transaction_repository.dart';
 import '../services/currency_service.dart';
 
 class CalendarViewScreen extends StatefulWidget {
   final AppDatabase db;
-  const CalendarViewScreen({Key? key, required this.db}) : super(key: key);
+  final TransactionRepository repository;
+  
+  const CalendarViewScreen({
+    Key? key, 
+    required this.db,
+    required this.repository,
+  }) : super(key: key);
 
   @override
   _CalendarViewScreenState createState() => _CalendarViewScreenState();
@@ -49,8 +56,8 @@ class _CalendarViewScreenState extends State<CalendarViewScreen> {
     });
     
     try {
-      // Get all transactions
-      final transactions = await widget.db.select(widget.db.transactions).get();
+      // Get all transactions using repository
+      final transactions = await widget.repository.getAllTransactions();
       
       // Group transactions by day
       final Map<DateTime, List<Transaction>> transactionsByDay = {};

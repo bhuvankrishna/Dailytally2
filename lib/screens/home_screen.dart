@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/app_database.dart';
+import '../repositories/transaction_repository.dart';
 import '../services/currency_service.dart';
 import 'calendar_view_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final AppDatabase db;
-  const HomeScreen({Key? key, required this.db}) : super(key: key);
+  final TransactionRepository repository;
+  
+  const HomeScreen({
+    Key? key, 
+    required this.db,
+    required this.repository,
+  }) : super(key: key);
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -55,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CalendarViewScreen(db: widget.db),
+                  builder: (context) => CalendarViewScreen(db: widget.db, repository: widget.repository),
                 ),
               );
             },
@@ -65,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: StreamBuilder<List<Transaction>>(
-          stream: widget.db.select(widget.db.transactions).watch(),
+          stream: widget.repository.watchAllTransactions(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());

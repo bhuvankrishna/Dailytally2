@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:drift/drift.dart';
 import '../models/app_database.dart';
 import 'transaction_repository.dart';
 import 'local_transaction_repository.dart';
@@ -100,9 +101,9 @@ class SyncedTransactionRepository implements TransactionRepository {
           // Transaction exists remotely but not locally - add it
           await _localRepository.addTransaction(
             TransactionsCompanion.insert(
-              id: remoteTx.id,
+              id: Value(remoteTx.id),
               type: remoteTx.type,
-              category: remoteTx.category,
+              categoryId: Value(remoteTx.categoryId),
               amount: remoteTx.amount,
               date: remoteTx.date,
               description: remoteTx.description,
@@ -121,9 +122,9 @@ class SyncedTransactionRepository implements TransactionRepository {
           try {
             await _remoteRepository.addTransaction(
               TransactionsCompanion.insert(
-                id: localTx.id,
+                id: Value(localTx.id),
                 type: localTx.type,
-                category: localTx.category,
+                categoryId: Value(localTx.categoryId),
                 amount: localTx.amount,
                 date: localTx.date,
                 description: localTx.description,
@@ -157,9 +158,9 @@ class SyncedTransactionRepository implements TransactionRepository {
           final tx = change['transaction'] as Transaction;
           await _remoteRepository.addTransaction(
             TransactionsCompanion.insert(
-              id: tx.id,
+              id: Value(tx.id),
               type: tx.type,
-              category: tx.category,
+              categoryId: Value(tx.categoryId),
               amount: tx.amount,
               date: tx.date,
               description: tx.description,

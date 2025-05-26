@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 import '../models/app_database.dart';
+import '../repositories/transaction_repository.dart';
 
 enum ReportPeriod {
   daily,
@@ -35,8 +36,9 @@ class ReportData {
 
 class ReportService {
   final AppDatabase db;
+  final TransactionRepository repository;
   
-  ReportService(this.db);
+  ReportService(this.db, this.repository);
   
   // Get report data for a specific period
   Future<ReportData> getReportData(ReportPeriod period, [DateTime? customDate]) async {
@@ -72,12 +74,12 @@ class ReportService {
         break;
     }
     
-    // Get all transactions for the period
-    final transactions = await db.select(db.transactions).get();
+    // Get all transactions for the period using repository
+    final allTransactions = await repository.getAllTransactions();
     
     // Filter transactions by date manually
-    transactions.removeWhere((tx) => 
-      tx.date.isBefore(startDate) || tx.date.isAfter(endDate));
+    final transactions = allTransactions.where((tx) => 
+      !tx.date.isBefore(startDate) && !tx.date.isAfter(endDate)).toList();
     
     // Calculate totals
     double totalIncome = 0;

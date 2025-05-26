@@ -2,11 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:intl/intl.dart';
 import '../models/app_database.dart';
+import '../repositories/transaction_repository.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final AppDatabase db;
   final Transaction? transaction;
-  const AddTransactionScreen({Key? key, required this.db, this.transaction}) : super(key: key);
+  final TransactionRepository repository;
+  
+  const AddTransactionScreen({
+    Key? key, 
+    required this.db, 
+    this.transaction,
+    required this.repository,
+  }) : super(key: key);
 
   @override
   _AddTransactionScreenState createState() => _AddTransactionScreenState();
@@ -63,28 +71,37 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           .showSnackBar(const SnackBar(content: Text('Please select a category')));
       return;
     }
-    if (widget.transaction == null) {
-      await widget.db.into(widget.db.transactions).insert(
-        TransactionsCompanion(
-          categoryId: Value(_selectedCategoryId!),
-          type: Value(_type.name),
-          date: Value(_date),
-          description: Value(desc),
-          amount: Value(amount),
-        ),
+    
+    try {
+      if (widget.transaction == null) {
+        // Add new transaction using repository
+        await widget.repository.addTransaction(
+          TransactionsCompanion(
+            categoryId: Value(_selectedCategoryId!),
+            type: Value(_type.name),
+            date: Value(_date),
+            description: Value(desc),
+            amount: Value(amount),
+          ),
+        );
+      } else {
+        // Update existing transaction using repository
+        final updated = Transaction(
+          id: widget.transaction!.id,
+          categoryId: _selectedCategoryId,
+          type: _type.name,
+          date: _date,
+          description: desc,
+          amount: amount,
+        );
+        await widget.repository.updateTransaction(updated);
+      }
+      Navigator.of(context).pop();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving transaction: $e')),
       );
-    } else {
-      final updated = Transaction(
-        id: widget.transaction!.id,
-        categoryId: _selectedCategoryId,
-        type: _type.name,
-        date: _date,
-        description: desc,
-        amount: amount,
-      );
-      await widget.db.update(widget.db.transactions).replace(updated);
     }
-    Navigator.of(context).pop();
   }
 
   @override
