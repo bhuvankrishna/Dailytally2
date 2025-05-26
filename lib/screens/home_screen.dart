@@ -8,33 +8,33 @@ import 'calendar_view_screen.dart';
 class HomeScreen extends StatefulWidget {
   final AppDatabase db;
   final TransactionRepository repository;
-  
+
   const HomeScreen({
-    Key? key, 
+    Key? key,
     required this.db,
     required this.repository,
   }) : super(key: key);
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  HomeScreenState createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   String _currencySymbol = '₹';
-  
+
   @override
   void initState() {
     super.initState();
     _loadCurrencySymbol();
   }
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Reload currency when screen becomes visible again
     _loadCurrencySymbol();
   }
-  
+
   Future<void> _loadCurrencySymbol() async {
     try {
       final symbol = await CurrencyService.getCurrencySymbol();
@@ -62,7 +62,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CalendarViewScreen(db: widget.db, repository: widget.repository),
+                  builder: (context) => CalendarViewScreen(
+                      db: widget.db, repository: widget.repository),
                 ),
               );
             },
@@ -77,20 +78,21 @@ class _HomeScreenState extends State<HomeScreen> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
-            
+
             final transactions = snapshot.data ?? [];
             final totalIncome = transactions
                 .where((tx) => tx.type.toLowerCase() == 'income')
                 .fold(0.0, (sum, tx) => sum + tx.amount);
-            
+
             final totalExpense = transactions
                 .where((tx) => tx.type.toLowerCase() == 'expense')
                 .fold(0.0, (sum, tx) => sum + tx.amount);
-            
+
             final balance = totalIncome - totalExpense;
-            
-            final currencyFormat = NumberFormat.currency(symbol: _currencySymbol, decimalDigits: 2);
-            
+
+            final currencyFormat = NumberFormat.currency(
+                symbol: _currencySymbol, decimalDigits: 2);
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -199,20 +201,25 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Text('No transactions yet'),
                         )
                       : ListView.builder(
-                          itemCount: transactions.length > 5 ? 5 : transactions.length,
+                          itemCount:
+                              transactions.length > 5 ? 5 : transactions.length,
                           itemBuilder: (context, index) {
                             final tx = transactions[index];
                             final isIncome = tx.type.toLowerCase() == 'income';
                             return ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: isIncome ? Colors.green : Colors.red,
+                                backgroundColor:
+                                    isIncome ? Colors.green : Colors.red,
                                 child: Icon(
-                                  isIncome ? Icons.arrow_downward : Icons.arrow_upward,
+                                  isIncome
+                                      ? Icons.arrow_downward
+                                      : Icons.arrow_upward,
                                   color: Colors.white,
                                 ),
                               ),
                               title: Text(tx.description),
-                              subtitle: Text(DateFormat.yMMMd().format(tx.date)),
+                              subtitle:
+                                  Text(DateFormat.yMMMd().format(tx.date)),
                               trailing: Text(
                                 currencyFormat.format(tx.amount),
                                 style: TextStyle(

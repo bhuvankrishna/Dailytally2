@@ -5,7 +5,8 @@ import 'package:drift/drift.dart' show Value;
 class AddCategoryScreen extends StatefulWidget {
   final AppDatabase db;
   final Category? category;
-  const AddCategoryScreen({Key? key, required this.db, this.category}) : super(key: key);
+  const AddCategoryScreen({Key? key, required this.db, this.category})
+      : super(key: key);
 
   @override
   State<AddCategoryScreen> createState() => _AddCategoryScreenState();
@@ -34,17 +35,18 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
     final name = _nameController.text.trim();
     if (widget.category == null) {
       await widget.db.into(widget.db.categories).insert(
-        CategoriesCompanion(name: Value(name), type: Value(_type)),
-      );
+            CategoriesCompanion(name: Value(name), type: Value(_type)),
+          );
     } else {
       await widget.db.update(widget.db.categories).replace(
-        Category(
-          id: widget.category!.id,
-          name: name,
-          type: _type,
-        ),
-      );
+            Category(
+              id: widget.category!.id,
+              name: name,
+              type: _type,
+            ),
+          );
     }
+    if (!mounted) return; // Check mounted before using context
     Navigator.of(context).pop();
   }
 

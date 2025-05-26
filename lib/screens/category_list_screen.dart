@@ -6,10 +6,10 @@ class CategoryListScreen extends StatefulWidget {
   const CategoryListScreen({Key? key, required this.db}) : super(key: key);
 
   @override
-  _CategoryListScreenState createState() => _CategoryListScreenState();
+  CategoryListScreenState createState() => CategoryListScreenState();
 }
 
-class _CategoryListScreenState extends State<CategoryListScreen> {
+class CategoryListScreenState extends State<CategoryListScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -65,7 +65,9 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                           IconButton(
                             icon: const Icon(Icons.delete),
                             onPressed: () async {
-                              await widget.db.delete(widget.db.categories).delete(cat);
+                              await widget.db
+                                  .delete(widget.db.categories)
+                                  .delete(cat);
                               setState(() {});
                             },
                           ),
@@ -106,7 +108,9 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                           IconButton(
                             icon: const Icon(Icons.delete),
                             onPressed: () async {
-                              await widget.db.delete(widget.db.categories).delete(cat);
+                              await widget.db
+                                  .delete(widget.db.categories)
+                                  .delete(cat);
                               setState(() {});
                             },
                           ),

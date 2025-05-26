@@ -33,8 +33,8 @@ class LocalTransactionRepository implements TransactionRepository {
   @override
   Future<bool> deleteTransaction(int id) async {
     final rowsAffected = await (_db.delete(_db.transactions)
-      ..where((tbl) => tbl.id.equals(id)))
-      .go();
+          ..where((tbl) => tbl.id.equals(id)))
+        .go();
     return rowsAffected > 0;
   }
 
@@ -55,7 +55,7 @@ class LocalTransactionRepository implements TransactionRepository {
       // If conversion fails, return empty list
       return [];
     }
-    
+
     final query = _db.select(_db.transactions)
       ..where((tbl) => tbl.categoryId.equals(categoryId));
     return await query.get();
@@ -66,7 +66,7 @@ class LocalTransactionRepository implements TransactionRepository {
       DateTime startDate, DateTime endDate) async {
     // Get all transactions and filter manually
     final allTransactions = await getAllTransactions();
-    
+
     // Filter transactions by date range
     return allTransactions.where((tx) {
       return !tx.date.isBefore(startDate) && !tx.date.isAfter(endDate);

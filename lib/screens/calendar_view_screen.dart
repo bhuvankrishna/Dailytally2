@@ -8,24 +8,24 @@ import '../services/currency_service.dart';
 class CalendarViewScreen extends StatefulWidget {
   final AppDatabase db;
   final TransactionRepository repository;
-  
+
   const CalendarViewScreen({
-    Key? key, 
+    Key? key,
     required this.db,
     required this.repository,
   }) : super(key: key);
 
   @override
-  _CalendarViewScreenState createState() => _CalendarViewScreenState();
+  CalendarViewScreenState createState() => CalendarViewScreenState();
 }
 
-class _CalendarViewScreenState extends State<CalendarViewScreen> {
+class CalendarViewScreenState extends State<CalendarViewScreen> {
   late DateTime _selectedDay;
   late DateTime _focusedDay;
   late Map<DateTime, List<Transaction>> _transactionsByDay;
   String _currencySymbol = '₹';
   bool _isLoading = true;
-  
+
   @override
   void initState() {
     super.initState();
@@ -35,7 +35,7 @@ class _CalendarViewScreenState extends State<CalendarViewScreen> {
     _loadCurrencySymbol();
     _loadTransactions();
   }
-  
+
   Future<void> _loadCurrencySymbol() async {
     try {
       final symbol = await CurrencyService.getCurrencySymbol();
@@ -49,30 +49,30 @@ class _CalendarViewScreenState extends State<CalendarViewScreen> {
       });
     }
   }
-  
+
   Future<void> _loadTransactions() async {
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       // Get all transactions using repository
       final transactions = await widget.repository.getAllTransactions();
-      
+
       // Group transactions by day
       final Map<DateTime, List<Transaction>> transactionsByDay = {};
-      
+
       for (final tx in transactions) {
         // Normalize date to remove time component
         final date = DateTime(tx.date.year, tx.date.month, tx.date.day);
-        
+
         if (!transactionsByDay.containsKey(date)) {
           transactionsByDay[date] = [];
         }
-        
+
         transactionsByDay[date]!.add(tx);
       }
-      
+
       setState(() {
         _transactionsByDay = transactionsByDay;
         _isLoading = false;
@@ -81,18 +81,19 @@ class _CalendarViewScreenState extends State<CalendarViewScreen> {
       setState(() {
         _isLoading = false;
       });
+      if (!mounted) return; // Check mounted before using context
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading transactions: $e')),
       );
     }
   }
-  
+
   List<Transaction> _getTransactionsForDay(DateTime day) {
     // Normalize date to remove time component
     final normalizedDay = DateTime(day.year, day.month, day.day);
     return _transactionsByDay[normalizedDay] ?? [];
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -112,7 +113,7 @@ class _CalendarViewScreenState extends State<CalendarViewScreen> {
             ),
     );
   }
-  
+
   Widget _buildCalendar() {
     return TableCalendar(
       firstDay: DateTime.utc(2020, 1, 1),
@@ -141,10 +142,10 @@ class _CalendarViewScreenState extends State<CalendarViewScreen> {
       },
     );
   }
-  
+
   Widget _buildTransactionList() {
     final transactions = _getTransactionsForDay(_selectedDay);
-    
+
     if (transactions.isEmpty) {
       return Center(
         child: Text(
@@ -153,7 +154,7 @@ class _CalendarViewScreenState extends State<CalendarViewScreen> {
         ),
       );
     }
-    
+
     // Get categories for lookup
     return FutureBuilder<List<Category>>(
       future: widget.db.select(widget.db.categories).get(),
@@ -161,19 +162,19 @@ class _CalendarViewScreenState extends State<CalendarViewScreen> {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         final categories = snapshot.data!;
         final categoryMap = {for (var cat in categories) cat.id: cat.name};
-        
+
         return ListView.builder(
           itemCount: transactions.length,
           itemBuilder: (context, index) {
             final tx = transactions[index];
             final isIncome = tx.type.toLowerCase() == 'income';
-            final categoryName = tx.categoryId != null 
-                ? categoryMap[tx.categoryId] ?? 'Unknown' 
+            final categoryName = tx.categoryId != null
+                ? categoryMap[tx.categoryId] ?? 'Unknown'
                 : 'Unknown';
-            
+
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: ListTile(

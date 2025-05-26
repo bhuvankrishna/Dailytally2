@@ -5,26 +5,26 @@ import '../repositories/remote_transaction_repository.dart';
 
 class SettingsScreen extends StatefulWidget {
   final TransactionRepository repository;
-  
+
   const SettingsScreen({
     Key? key,
     required this.repository,
   }) : super(key: key);
 
   @override
-  _SettingsScreenState createState() => _SettingsScreenState();
+  SettingsScreenState createState() => SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class SettingsScreenState extends State<SettingsScreen> {
   String _selectedCurrencyCode = 'INR';
   String _selectedCurrencySymbol = '₹';
-  
+
   // Remote repository settings
   bool _useRemoteRepository = false;
   String _apiBaseUrl = '';
   String _apiKey = '';
   RemoteDataSourceType _remoteSourceType = RemoteDataSourceType.restApi;
-  
+
   // Define currencies list
   final List<Map<String, String>> _currencies = [
     {'code': 'INR', 'name': 'Indian Rupee', 'symbol': '₹'},
@@ -51,7 +51,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final apiBaseUrl = prefs.getString('api_base_url') ?? '';
     final apiKey = prefs.getString('api_key') ?? '';
     final sourceTypeString = prefs.getString('remote_source_type') ?? 'restApi';
-    
+
     // Convert string to enum
     RemoteDataSourceType sourceType;
     switch (sourceTypeString.toLowerCase()) {
@@ -64,7 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       default:
         sourceType = RemoteDataSourceType.restApi;
     }
-    
+
     setState(() {
       _selectedCurrencyCode = code;
       _selectedCurrencySymbol = symbol;
@@ -79,12 +79,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('currency_code', _selectedCurrencyCode);
     await prefs.setString('currency_symbol', _selectedCurrencySymbol);
-    
+
     // Save remote repository settings
     await prefs.setBool('use_remote_repository', _useRemoteRepository);
     await prefs.setString('api_base_url', _apiBaseUrl);
     await prefs.setString('api_key', _apiKey);
-    
+
     // Convert enum to string
     String sourceTypeString;
     switch (_remoteSourceType) {
@@ -98,14 +98,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         sourceTypeString = 'restApi';
     }
     await prefs.setString('remote_source_type', sourceTypeString);
-    
+
+    if (!mounted) return; // Check mounted before using context
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Settings saved. Please restart the app for repository changes to take effect.'),
+        content: Text(
+            'Settings saved. Please restart the app for repository changes to take effect.'),
         duration: Duration(seconds: 3),
       ),
     );
-    
+
     // Force rebuild of other screens
     setState(() {});
   }
@@ -121,7 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const ListTile(
             title: Text(
               'Currency Settings',
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),
@@ -130,7 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(),
           ListTile(
             title: const Text('Currency'),
-            subtitle: Text('Select your preferred currency'),
+            subtitle: const Text('Select your preferred currency'),
             trailing: DropdownButton<String>(
               value: _selectedCurrencyCode,
               onChanged: (String? newValue) {
@@ -159,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const ListTile(
             title: Text(
               'Repository Settings',
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),
@@ -176,7 +178,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               });
             },
           ),
-          if (_useRemoteRepository) ...[  
+          if (_useRemoteRepository) ...[
             ListTile(
               title: const Text('Remote Source Type'),
               trailing: DropdownButton<RemoteDataSourceType>(
@@ -188,7 +190,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     });
                   }
                 },
-                items: RemoteDataSourceType.values.map<DropdownMenuItem<RemoteDataSourceType>>((type) {
+                items: RemoteDataSourceType.values
+                    .map<DropdownMenuItem<RemoteDataSourceType>>((type) {
                   return DropdownMenuItem<RemoteDataSourceType>(
                     value: type,
                     child: Text(type.toString().split('.').last),
@@ -210,7 +213,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: TextField(
                 decoration: const InputDecoration(
                   labelText: 'API Key',
@@ -242,17 +246,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 class CurrencyService {
   static const String _currencyPrefKey = 'currency_code';
   static const String _currencySymbolPrefKey = 'currency_symbol';
-  
+
   static Future<String> getCurrencyCode() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_currencyPrefKey) ?? 'INR';
   }
-  
+
   static Future<String> getCurrencySymbol() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_currencySymbolPrefKey) ?? '₹';
   }
-  
+
   // Format amount with the saved currency symbol
   static Future<String> formatAmount(double amount) async {
     final symbol = await getCurrencySymbol();

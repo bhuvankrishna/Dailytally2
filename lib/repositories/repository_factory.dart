@@ -7,28 +7,28 @@ import 'synced_transaction_repository.dart';
 /// Factory class to create repositories
 class RepositoryFactory {
   final AppDatabase _db;
-  
+
   // Singleton pattern
   static RepositoryFactory? _instance;
-  
+
   // Cached repositories
   LocalTransactionRepository? _localRepository;
   RemoteTransactionRepository? _remoteRepository;
   SyncedTransactionRepository? _syncedRepository;
-  
+
   RepositoryFactory._internal(this._db);
-  
+
   factory RepositoryFactory(AppDatabase db) {
     _instance ??= RepositoryFactory._internal(db);
     return _instance!;
   }
-  
+
   /// Get a local repository that uses Drift
   LocalTransactionRepository getLocalRepository() {
     _localRepository ??= LocalTransactionRepository(_db);
     return _localRepository!;
   }
-  
+
   /// Get a remote repository
   RemoteTransactionRepository getRemoteRepository({
     required RemoteDataSourceType sourceType,
@@ -42,7 +42,7 @@ class RepositoryFactory {
     );
     return _remoteRepository!;
   }
-  
+
   /// Get a synced repository that manages both local and remote
   SyncedTransactionRepository getSyncedRepository({
     required RemoteDataSourceType sourceType,
@@ -56,16 +56,16 @@ class RepositoryFactory {
         baseUrl: baseUrl,
         apiKey: apiKey,
       );
-      
+
       _syncedRepository = SyncedTransactionRepository(
         localRepository: localRepo,
         remoteRepository: remoteRepo,
       );
     }
-    
+
     return _syncedRepository!;
   }
-  
+
   /// Get the appropriate repository based on configuration
   TransactionRepository getRepository({
     bool useRemote = false,
@@ -83,7 +83,7 @@ class RepositoryFactory {
       );
     }
   }
-  
+
   /// Dispose all repositories
   void dispose() {
     _remoteRepository?.dispose();

@@ -10,18 +10,18 @@ import 'settings_screen.dart';
 class MainScreen extends StatefulWidget {
   final AppDatabase db;
   final TransactionRepository repository;
-  
+
   const MainScreen({
-    Key? key, 
+    Key? key,
     required this.db,
     required this.repository,
   }) : super(key: key);
 
   @override
-  _MainScreenState createState() => _MainScreenState();
+  MainScreenState createState() => MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   late List<Widget> _screens;
 

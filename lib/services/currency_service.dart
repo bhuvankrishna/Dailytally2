@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class CurrencyService {
   // Default currency is INR
   static const String _defaultCurrencySymbol = '₹';
-  
+
   // Get currency symbol
   static Future<String> getCurrencySymbol() async {
     try {
@@ -14,7 +14,7 @@ class CurrencyService {
       return _defaultCurrencySymbol;
     }
   }
-  
+
   // Format amount with currency symbol
   static String formatAmount(double amount, String symbol) {
     return '$symbol ${amount.toStringAsFixed(2)}';

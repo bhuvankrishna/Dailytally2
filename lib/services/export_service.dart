@@ -9,42 +9,42 @@ import '../models/app_database.dart';
 
 class ExportService {
   final AppDatabase db;
-  
+
   ExportService(this.db);
-  
+
   /// Exports all transactions to a CSV file
   /// Returns the file path if successful, or throws an exception if it fails
   Future<String> exportTransactionsToCSV(String currencySymbol) async {
     // Get all transactions
     final transactions = await db.select(db.transactions).get();
-    
+
     // Get categories for lookup
     final categories = await db.select(db.categories).get();
     final categoryMap = {for (var cat in categories) cat.id: cat.name};
-    
+
     // Create CSV data
     List<List<dynamic>> csvData = [];
-    
+
     // Add header row
     csvData.add([
-      'ID', 
-      'Date', 
-      'Type', 
-      'Category', 
-      'Description', 
+      'ID',
+      'Date',
+      'Type',
+      'Category',
+      'Description',
       'Amount ($currencySymbol)'
     ]);
-    
+
     // Format date
     final dateFormat = DateFormat('yyyy-MM-dd');
-    
+
     // Add transaction rows
     for (var tx in transactions) {
       String categoryName = 'Unknown';
       if (tx.categoryId != null) {
         categoryName = categoryMap[tx.categoryId] ?? 'Unknown';
       }
-      
+
       csvData.add([
         tx.id,
         dateFormat.format(tx.date),
@@ -54,16 +54,18 @@ class ExportService {
         tx.amount.toStringAsFixed(2),
       ]);
     }
-    
+
     // Convert to CSV string
-    String csv = const ListToCsvConverter().convert(csvData, fieldDelimiter: ',');
-    
+    String csv =
+        const ListToCsvConverter().convert(csvData, fieldDelimiter: ',');
+
     // Convert string to bytes for file_picker
     final bytes = csv.codeUnits;
-    
+
     // Default filename with timestamp
-    final defaultFileName = 'dailytally_export_${DateTime.now().millisecondsSinceEpoch}.csv';
-    
+    final defaultFileName =
+        'dailytally_export_${DateTime.now().millisecondsSinceEpoch}.csv';
+
     try {
       // Try using file_picker to let user choose save location
       final result = await FilePicker.platform.saveFile(
@@ -74,23 +76,23 @@ class ExportService {
         lockParentWindow: true,
         bytes: Uint8List.fromList(bytes), // Required for mobile platforms
       );
-      
+
       if (result != null) {
         return result; // Return the path chosen by user
       }
     } catch (e) {
       // Fall through to default save method
     }
-    
+
     // Fallback: Save to app documents directory
     final directory = await getApplicationDocumentsDirectory();
     final outputPath = '${directory.path}/$defaultFileName';
     final file = File(outputPath);
     await file.writeAsString(csv);
-    
+
     return outputPath;
   }
-  
+
   /// Shows a loading dialog while an operation is in progress
   static void showLoadingDialog(BuildContext context, String message) {
     showDialog(
@@ -110,7 +112,7 @@ class ExportService {
       },
     );
   }
-  
+
   /// Shows a success dialog with the file path
   static void showSuccessDialog(BuildContext context, String filePath) {
     showDialog(
@@ -124,7 +126,8 @@ class ExportService {
             children: [
               const Text('Transactions exported successfully!'),
               const SizedBox(height: 8),
-              Text('File saved to: $filePath', style: const TextStyle(fontSize: 12)),
+              Text('File saved to: $filePath',
+                  style: const TextStyle(fontSize: 12)),
             ],
           ),
           actions: [
@@ -137,7 +140,7 @@ class ExportService {
       },
     );
   }
-  
+
   /// Shows an error snackbar
   static void showErrorSnackBar(BuildContext context, String errorMessage) {
     ScaffoldMessenger.of(context).showSnackBar(

@@ -8,19 +8,19 @@ class AddTransactionScreen extends StatefulWidget {
   final AppDatabase db;
   final Transaction? transaction;
   final TransactionRepository repository;
-  
+
   const AddTransactionScreen({
-    Key? key, 
-    required this.db, 
+    Key? key,
+    required this.db,
     this.transaction,
     required this.repository,
   }) : super(key: key);
 
   @override
-  _AddTransactionScreenState createState() => _AddTransactionScreenState();
+  AddTransactionScreenState createState() => AddTransactionScreenState();
 }
 
-class _AddTransactionScreenState extends State<AddTransactionScreen> {
+class AddTransactionScreenState extends State<AddTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
   late CategoryType _type;
   int? _selectedCategoryId;
@@ -67,11 +67,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final desc = _descController.text.trim();
     final amount = double.tryParse(_amountController.text.trim()) ?? 0;
     if (_selectedCategoryId == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Please select a category')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a category')));
       return;
     }
-    
+
     try {
       if (widget.transaction == null) {
         // Add new transaction using repository
@@ -96,8 +96,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         );
         await widget.repository.updateTransaction(updated);
       }
+      if (!mounted) return; // Check mounted before using context
       Navigator.of(context).pop();
     } catch (e) {
+      if (!mounted) return; // Check mounted before using context
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error saving transaction: $e')),
       );
@@ -108,7 +110,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.transaction == null ? 'Add Transaction' : 'Edit Transaction'),
+        title: Text(widget.transaction == null
+            ? 'Add Transaction'
+            : 'Edit Transaction'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -132,15 +136,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 stream: widget.db.select(widget.db.categories).watch(),
                 builder: (ctx, snap) {
                   final cats = (snap.data ?? [])
-                      .where((c) => c.type.toLowerCase() == _type.name.toLowerCase())
+                      .where((c) =>
+                          c.type.toLowerCase() == _type.name.toLowerCase())
                       .toList();
                   return DropdownButtonFormField<int>(
                     value: _selectedCategoryId,
                     decoration: const InputDecoration(labelText: 'Category'),
                     items: cats
-                        .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                        .map((c) =>
+                            DropdownMenuItem(value: c.id, child: Text(c.name)))
                         .toList(),
-                    onChanged: (val) => setState(() => _selectedCategoryId = val),
+                    onChanged: (val) =>
+                        setState(() => _selectedCategoryId = val),
                     validator: (v) => v == null ? 'Select category' : null,
                   );
                 },
@@ -165,7 +172,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               TextFormField(
                 controller: _amountController,
                 decoration: const InputDecoration(labelText: 'Amount'),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Enter amount';
                   if (double.tryParse(v) == null) return 'Invalid number';

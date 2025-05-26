@@ -19,30 +19,30 @@ class SyncedTransactionRepository implements TransactionRepository {
   final LocalTransactionRepository _localRepository;
   final RemoteTransactionRepository _remoteRepository;
   final _syncController = StreamController<bool>.broadcast();
-  
+
   // For tracking sync status
   bool _isSyncing = false;
   DateTime _lastSyncTime = DateTime.fromMillisecondsSinceEpoch(0);
-  
+
   // For tracking connectivity
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   bool _isOnline = false;
-  
+
   // For tracking pending changes
   final List<Map<String, dynamic>> _pendingChanges = [];
-  
+
   SyncedTransactionRepository({
     required LocalTransactionRepository localRepository,
     required RemoteTransactionRepository remoteRepository,
-  }) : 
-    _localRepository = localRepository,
-    _remoteRepository = remoteRepository {
+  })  : _localRepository = localRepository,
+        _remoteRepository = remoteRepository {
     // Initialize connectivity monitoring
     _initConnectivity();
-    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+    _connectivitySubscription =
+        _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
   }
-  
+
   // Initialize connectivity status
   Future<void> _initConnectivity() async {
     late ConnectivityResult result;
@@ -53,104 +53,65 @@ class SyncedTransactionRepository implements TransactionRepository {
       _isOnline = false;
     }
   }
-  
+
   // Update connection status and trigger sync if needed
   void _updateConnectionStatus(ConnectivityResult result) {
     final wasOffline = !_isOnline;
     _isOnline = result != ConnectivityResult.none;
-    
+
     // If we just came back online, trigger a sync
     if (wasOffline && _isOnline) {
       syncWithRemote();
     }
   }
-  
+
   // Stream that emits when sync status changes
   Stream<bool> get syncStatus => _syncController.stream;
-  
+
   // Get the last sync time
   DateTime get lastSyncTime => _lastSyncTime;
-  
+
   // Check if currently syncing
   bool get isSyncing => _isSyncing;
-  
+
   // Manually trigger synchronization with remote
   Future<void> syncWithRemote() async {
     if (_isSyncing || !_isOnline) return;
-    
+
     _isSyncing = true;
     _syncController.add(true);
-    
+
     try {
       // Process any pending changes first
       await _processPendingChanges();
-      
+
       // Pull remote changes
       final remoteTransactions = await _remoteRepository.getAllTransactions();
       final localTransactions = await _localRepository.getAllTransactions();
-      
+
       // Create maps for easier lookup
       final localMap = {for (var tx in localTransactions) tx.id: tx};
       final remoteMap = {for (var tx in remoteTransactions) tx.id: tx};
-      
-      // Find transactions to add/update locally
-      for (final remoteTx in remoteTransactions) {
-        final localTx = localMap[remoteTx.id];
-        
-        if (localTx == null) {
-          // Transaction exists remotely but not locally - add it
-          await _localRepository.addTransaction(
-            TransactionsCompanion.insert(
-              id: Value(remoteTx.id),
-              type: remoteTx.type,
-              categoryId: Value(remoteTx.categoryId),
-              amount: remoteTx.amount,
-              date: remoteTx.date,
-              description: remoteTx.description,
-            ),
-          );
-        } else if (_isRemoteNewer(remoteTx, localTx)) {
-          // Remote transaction is newer - update local
-          await _localRepository.updateTransaction(remoteTx);
-        }
-      }
-      
-      // Find transactions to add remotely
-      for (final localTx in localTransactions) {
-        if (!remoteMap.containsKey(localTx.id)) {
-          // Transaction exists locally but not remotely - add it
-          try {
-            await _remoteRepository.addTransaction(
-              TransactionsCompanion.insert(
-                id: Value(localTx.id),
-                type: localTx.type,
-                categoryId: Value(localTx.categoryId),
-                amount: localTx.amount,
-                date: localTx.date,
-                description: localTx.description,
-              ),
-            );
-          } catch (e) {
-            // If remote add fails, mark for later sync
-            _addPendingChange('add', localTx);
-          }
-        }
-      }
-      
+
+      // Synchronize changes between local and remote
+      await _synchronizeRemoteToLocal(localMap, remoteTransactions);
+      await _synchronizeLocalToRemote(remoteMap, localTransactions);
+
       _lastSyncTime = DateTime.now();
     } catch (e) {
       // Log error but don't rethrow to prevent UI crashes
-      print('Sync error: $e');
+      // print('Sync error: $e'); // avoid_print
     } finally {
       _isSyncing = false;
       _syncController.add(false);
     }
   }
-  
-  // Process any pending changes that couldn't be synced previously
+
+  // Process any pending changes that couldn't be synced previously.
+  // Changes are processed in a First-In, First-Out (FIFO) manner.
   Future<void> _processPendingChanges() async {
     if (_pendingChanges.isEmpty || !_isOnline) return;
-    
+
     final changes = List.from(_pendingChanges);
     for (final change in changes) {
       try {
@@ -173,42 +134,96 @@ class SyncedTransactionRepository implements TransactionRepository {
           final id = change['id'] as int;
           await _remoteRepository.deleteTransaction(id);
         }
-        
+
         // Remove from pending changes if successful
         _pendingChanges.remove(change);
       } catch (e) {
         // Keep in pending changes if failed
-        print('Failed to process pending change: $e');
+        // print('Failed to process pending change: $e'); // avoid_print
       }
     }
   }
-  
+
   // Add a pending change to be processed later
   void _addPendingChange(String action, [Transaction? transaction, int? id]) {
     final change = {
       'action': action,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
     };
-    
+
     if (transaction != null) {
       change['transaction'] = transaction;
     }
-    
+
     if (id != null) {
       change['id'] = id;
     }
-    
+
     _pendingChanges.add(change);
   }
-  
+
   // Check if remote transaction is newer than local
   // In a real app, you might want to add a 'lastModified' field to transactions
   bool _isRemoteNewer(Transaction remoteTx, Transaction localTx) {
+    // FIXME: This is a simplified comparison. For robust synchronization, transactions should have a 'lastModified' timestamp or version number, and comparison should be based on that.
     // This is a simplified comparison
     // In a real app, you'd compare timestamps or version numbers
     return remoteTx != localTx;
   }
 
+  Future<void> _synchronizeRemoteToLocal(
+    Map<int, Transaction> localMap,
+    List<Transaction> remoteTransactions,
+  ) async {
+    for (final remoteTx in remoteTransactions) {
+      final localTx = localMap[remoteTx.id];
+
+      if (localTx == null) {
+        // Transaction exists remotely but not locally - add it
+        await _localRepository.addTransaction(
+          TransactionsCompanion.insert(
+            id: Value(remoteTx.id),
+            type: remoteTx.type,
+            categoryId: Value(remoteTx.categoryId),
+            amount: remoteTx.amount,
+            date: remoteTx.date,
+            description: remoteTx.description,
+          ),
+        );
+      } else if (_isRemoteNewer(remoteTx, localTx)) {
+        // Remote transaction is newer - update local
+        await _localRepository.updateTransaction(remoteTx);
+      }
+    }
+  }
+
+  Future<void> _synchronizeLocalToRemote(
+    Map<int, Transaction> remoteMap,
+    List<Transaction> localTransactions,
+  ) async {
+    for (final localTx in localTransactions) {
+      if (!remoteMap.containsKey(localTx.id)) {
+        // Transaction exists locally but not remotely - add it
+        try {
+          await _remoteRepository.addTransaction(
+            TransactionsCompanion.insert(
+              id: Value(localTx.id),
+              type: localTx.type,
+              categoryId: Value(localTx.categoryId),
+              amount: localTx.amount,
+              date: localTx.date,
+              description: localTx.description,
+            ),
+          );
+        } catch (e) {
+          // If remote add fails, mark for later sync
+          _addPendingChange('add', localTx);
+        }
+      }
+    }
+  }
+
+  // Note: These methods fetch data directly from the local repository for performance and to ensure a consistent view of data, especially when offline or before a sync occurs.
   @override
   Future<List<Transaction>> getAllTransactions() async {
     // Always fetch from local for performance
@@ -224,7 +239,7 @@ class SyncedTransactionRepository implements TransactionRepository {
   Future<int> addTransaction(TransactionsCompanion transaction) async {
     // Add to local first
     final id = await _localRepository.addTransaction(transaction);
-    
+
     // Then try to sync with remote
     if (_isOnline) {
       try {
@@ -243,7 +258,7 @@ class SyncedTransactionRepository implements TransactionRepository {
         _addPendingChange('add', localTx);
       }
     }
-    
+
     return id;
   }
 
@@ -251,7 +266,7 @@ class SyncedTransactionRepository implements TransactionRepository {
   Future<bool> updateTransaction(Transaction transaction) async {
     // Update local first
     final success = await _localRepository.updateTransaction(transaction);
-    
+
     // Then try to sync with remote
     if (success && _isOnline) {
       try {
@@ -264,7 +279,7 @@ class SyncedTransactionRepository implements TransactionRepository {
       // If offline, mark for later sync
       _addPendingChange('update', transaction);
     }
-    
+
     return success;
   }
 
@@ -272,7 +287,7 @@ class SyncedTransactionRepository implements TransactionRepository {
   Future<bool> deleteTransaction(int id) async {
     // Delete from local first
     final success = await _localRepository.deleteTransaction(id);
-    
+
     // Then try to sync with remote
     if (success && _isOnline) {
       try {
@@ -285,7 +300,7 @@ class SyncedTransactionRepository implements TransactionRepository {
       // If offline, mark for later sync
       _addPendingChange('delete', null, id);
     }
-    
+
     return success;
   }
 
@@ -302,14 +317,15 @@ class SyncedTransactionRepository implements TransactionRepository {
   @override
   Future<List<Transaction>> getTransactionsByDateRange(
       DateTime startDate, DateTime endDate) async {
-    return await _localRepository.getTransactionsByDateRange(startDate, endDate);
+    return await _localRepository.getTransactionsByDateRange(
+        startDate, endDate);
   }
 
   @override
   Stream<List<Transaction>> watchAllTransactions() {
     return _localRepository.watchAllTransactions();
   }
-  
+
   // Clean up resources
   void dispose() {
     _connectivitySubscription.cancel();
