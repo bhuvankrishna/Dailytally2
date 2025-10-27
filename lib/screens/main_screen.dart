@@ -23,24 +23,20 @@ class MainScreen extends StatefulWidget {
 
 class MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
-  late List<Widget> _screens;
-
-  @override
-  void initState() {
-    super.initState();
-    _screens = [
-      HomeScreen(db: widget.db, repository: widget.repository),
-      TransactionListScreen(db: widget.db, repository: widget.repository),
-      CategoryListScreen(db: widget.db),
-      ReportsScreen(db: widget.db, repository: widget.repository),
-      SettingsScreen(repository: widget.repository),
-    ];
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          HomeScreen(db: widget.db, repository: widget.repository),
+          TransactionListScreen(db: widget.db, repository: widget.repository),
+          CategoryListScreen(db: widget.db),
+          ReportsScreen(db: widget.db, repository: widget.repository),
+          SettingsScreen(repository: widget.repository),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         type: BottomNavigationBarType.fixed,
